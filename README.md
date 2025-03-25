@@ -26,7 +26,7 @@ restaurant-order-system/
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/Jack20410/Restaurant-Order-System.git
 cd restaurant-order-system
 ```
 
