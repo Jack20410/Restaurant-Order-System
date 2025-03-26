@@ -7,3 +7,36 @@ pydantic==2.6.1
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.9 
+
+Phạm vi trách nhiệm:
+•	- Quản lý người dùng (waiter, kitchen, management)
+•	- Xác thực & phân quyền người dùng
+•	- Xử lý thông báo cho nhân viên/bếp
+•	- Xem báo cáo doanh thu tổng hợp
+📌 Database (MySQL)
+1️ Bảng users (Quản lý nhân viên)
+user_id	email	password	role	shifts
+INT (PK)	VARCHAR	VARCHAR	ENUM(waiter, kitchen, management)	JSON
+2️ Bảng notifications (Thông báo)
+notification_id	user_id	message	status
+INT (PK)	INT (FK -> users)	TEXT	ENUM(read, unread)
+
+📌 API Cần Làm
+✔ POST /users → Tạo tài khoản nhân viên hoặc khách hàng
+✔ GET /users/{id} → Xem thông tin người dùng
+✔ POST /auth/login → Đăng nhập
+✔ POST /auth/logout → Đăng xuất
+✔ POST /notifications → Gửi thông báo cho nhân viên/bếp
+✔ GET /reports/revenue → Báo cáo doanh thu
+
+user-service/
+│── main.py               # Chạy FastAPI app
+│── models.py             # Định nghĩa database models
+│── database.py           # Kết nối MySQL
+│── auth.py               # Xử lý JWT
+│── routers/
+│   ├── users.py          # API quản lý tài khoản
+│── services/
+│   ├── user_service.py   # Business logic của user
+│── requirements.txt      # Các thư viện cần cài đặt
+│── Dockerfile            # Docker build

@@ -5,3 +5,32 @@ python-dotenv==1.0.1
 pydantic==2.6.1
 python-multipart==0.0.9
 requests==2.31.0 
+
+Phạm vi trách nhiệm:
+•	- Quản lý thực đơn
+•	- Tiếp nhận & xử lý đơn hàng bếp
+•	- Cập nhật trạng thái món ăn
+📌 Database schemma (MongoDB)
+- food_menu (food_id, name, quantity, availability, image, note, category)
+ 
+
+- kitchen_orders (order_id, items, status)
+ 
+📌 API Cần Làm
+✔ GET /menu → Xem danh sách món ăn
+✔ PUT /menu/{id} → Cập nhật trạng thái món ăn	
+✔ POST /kitchen_orders → Nhận đơn hàng từ Order Service
+✔ PUT /kitchen_orders/{id} → Cập nhật trạng thái món ăn
+
+kitchen-service/
+│── main.py               # Chạy FastAPI app
+│── models.py             # Định nghĩa database models (MongoDB)
+│── database.py           # Kết nối MongoDB
+│── routers/
+│   ├── menu.py           # API quản lý thực đơn
+│   ├── kitchen.py        # API xử lý đơn bếp
+│── services/
+│   ├── menu_service.py   # Business logic của thực đơn
+│   ├── kitchen_service.py# Business logic của bếp
+│── requirements.txt      # Các thư viện cần cài đặt
+│── Dockerfile            # Docker build
