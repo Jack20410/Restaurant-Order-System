@@ -6,7 +6,15 @@ python-dotenv==1.0.1
 pydantic==2.6.1
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.9 
+python-multipart==0.0.9
+alembic==1.13.1
+email-validator==2.1.0.post1
+pytest==8.0.2
+httpx==0.27.0
+redis==5.0.1
+celery==5.3.6
+
+#Run pip install -r requirements.txt to install all the dependencies
 
 Phạm vi trách nhiệm:
 •	- Quản lý người dùng (waiter, kitchen, management)
@@ -14,10 +22,10 @@ Phạm vi trách nhiệm:
 •	- Xử lý thông báo cho nhân viên/bếp
 •	- Xem báo cáo doanh thu tổng hợp
 📌 Database (MySQL)
-1️ Bảng users (Quản lý nhân viên)
+1  Bảng users (Quản lý nhân viên)
 user_id	email	password	role	shifts
 INT (PK)	VARCHAR	VARCHAR	ENUM(waiter, kitchen, management)	JSON
-2️ Bảng notifications (Thông báo)
+2  Bảng notifications (Thông báo)
 notification_id	user_id	message	status
 INT (PK)	INT (FK -> users)	TEXT	ENUM(read, unread)
 

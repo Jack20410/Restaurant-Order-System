@@ -6,6 +6,7 @@ pydantic==2.6.1
 python-multipart==0.0.9
 requests==2.31.0 
 
+#Run pip install -r requirements.txt to install all the dependencies
 Phạm vi trách nhiệm:
 •	- Quản lý thực đơn
 •	- Tiếp nhận & xử lý đơn hàng bếp
