@@ -38,13 +38,22 @@ docker-compose up --build
 Or start individual services for development:
 
 ```bash
-# For user service developer
+# For user service developer 
+cd user-service
+uvicorn main:app --reload --port 8001
+# or
 docker-compose up user-service user-db
 
 # For order service developer
+cd order-service
+uvicorn main:app --reload --port 8002
+# or
 docker-compose up order-service order-db
 
 # For kitchen service developer
+cd kitchen-service
+uvicorn main:app --reload --port 8003
+# or
 docker-compose up kitchen-service mongodb
 ```
 
