@@ -30,10 +30,11 @@ notification_id	user_id	message	status
 INT (PK)	INT (FK -> users)	TEXT	ENUM(read, unread)
 
 📌 API Cần Làm
-✔ POST /users → Tạo tài khoản nhân viên hoặc khách hàng
-✔ GET /users/{id} → Xem thông tin người dùng
-✔ POST /auth/login → Đăng nhập
-✔ POST /auth/logout → Đăng xuất
+✔ POST /users/create → Tạo tài khoản nhân viên hoặc khách hàng ==> #done
+✔ GET /users/{id} → Xem thông tin người dùng ==> #done
+✔ GET /users/ → Xem danh sách tất cả người dùng ==> #done
+✔ POST /auth/login → Đăng nhập ==> #done
+✔ POST /auth/logout → Đăng xuất ==> #done
 ✔ POST /notifications → Gửi thông báo cho nhân viên/bếp
 ✔ GET /reports/revenue → Báo cáo doanh thu
 

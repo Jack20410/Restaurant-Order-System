@@ -1,14 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-import database, models, auth
-from passlib.context import CryptContext
+from typing import List
+import database, models
 from database import SessionLocal
 from schemas import UserCreate, UserResponse
 from services import user_service
 from models import UserRole, ShiftType
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Dependency
 def get_db():
@@ -18,8 +17,22 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/", response_model=UserResponse)
+@router.get("/", response_model=List[UserResponse])
+def list_users(db: Session = Depends(get_db)):
+    """Get all user accounts"""
+    return user_service.get_all_users(db)
+
+@router.get("/{user_id}", response_model=UserResponse)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    """Get a specific user by ID"""
+    db_user = user_service.get_user_by_id(db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+@router.post("/create", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    """Create a new user account"""
     # Check if user with this email already exists
     db_user = user_service.get_user_by_email(db, email=user.mail)
     if db_user:
@@ -29,11 +42,3 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         )
     
     return user_service.create_user(db=db, user=user)
-
-@router.post("/login")
-def login(mail: str, password: str, db: Session = Depends(database.SessionLocal)):
-    user = db.query(models.User).filter(models.User.mail == mail).first()
-    if not user or not pwd_context.verify(password, user.password):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-    token = auth.create_access_token({"sub": user.mail, "role": user.role.value})
-    return {"access_token": token, "token_type": "bearer"}
