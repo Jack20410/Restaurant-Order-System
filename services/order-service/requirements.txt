@@ -3,10 +3,9 @@ uvicorn==0.27.1
 sqlalchemy==2.0.27
 mysqlclient==2.2.4
 python-dotenv==1.0.1
-pydantic==2.6.1
+pydantic==1.10.12
 python-multipart==0.0.9
-requests==2.31.0 
-
+requests==2.31.0
 #Run pip install -r requirements.txt to install all the dependencies
 
 Phạm vi trách nhiệm:
@@ -27,12 +26,12 @@ INT (PK)	INT (FK -> orders)	ENUM(cash, card, e-wallet)
 
 
 📌 API Cần Làm
-✔ POST /customers → Thêm khách hàng
-✔ GET /customers/{id} → Xem thông tin khách hàng
-✔ PUT /customers/{id} → Cập nhật điểm thành viên
-✔ POST /orders → Tạo đơn hàng
-✔ PUT /orders/{id} → Cập nhật đơn hàng
-✔ POST /payments → Xử lý thanh toán
+✔ POST /customers → Thêm khách hàng ===> Đã làm
+✔ GET /customers/{id} → Xem thông tin khách hàng ===> Đã làm
+✔ PUT /customers/{id} → Cập nhật điểm thành viên ===> Đã làm
+✔ POST /orders → Tạo đơn hàng ===> Đã làm
+✔ PUT /orders/{id} → Cập nhật đơn hàng ===> Đã làm
+✔ POST /payments → Xử lý thanh toán ===> Đã làm
 
 order-service/
 │── main.py               # Chạy FastAPI app

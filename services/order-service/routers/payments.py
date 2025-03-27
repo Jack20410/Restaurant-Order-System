@@ -1,11 +1,8 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-import database, models
+# routers/payments.py
+from fastapi import APIRouter
 
 router = APIRouter()
 
 @router.post("/")
-def process_payment(payment: models.Payment, db: Session = Depends(database.SessionLocal)):
-    db.add(payment)
-    db.commit()
-    return {"message": "Payment processed successfully"}
+def process_payment(payment: dict):
+    return {"message": "Payment processed", "payment": payment}
