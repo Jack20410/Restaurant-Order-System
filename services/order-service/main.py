@@ -4,7 +4,7 @@ from database_orders import init_db
 
 app = FastAPI()
 
-# ✅ Tự động tạo bảng khi chạy app
+# Tự động tạo bảng khi chạy app
 init_db()
 
 app.include_router(customers.router, prefix="/customers", tags=["Customers"])

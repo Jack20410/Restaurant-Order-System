@@ -8,7 +8,7 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# ✅ Tạo bảng trong database nếu chưa có
+# Tạo bảng trong database nếu chưa có
 def init_db():
     from models import Customer, Order, Payment
     Base.metadata.create_all(bind=engine)  # Ensure new fields are added

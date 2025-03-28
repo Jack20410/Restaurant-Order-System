@@ -6,14 +6,14 @@ from models import Customer
 
 router = APIRouter()
 
-# ✅ Schema cho request body
+# Schema cho request body
 class CustomerCreate(BaseModel):
     name: str
     email: str
-    points: int = 0  # ✅ Cho phép nhập points từ JSON
+    points: int = 0  # Cho phép nhập points từ JSON
 
 class CustomerUpdatePoints(BaseModel):
-    points: int  # ✅ Nhận points từ JSON khi update
+    points: int  # Nhận points từ JSON khi update
 
 def get_db():
     db = SessionLocal()
@@ -27,7 +27,7 @@ def create_customer(customer_data: CustomerCreate, db: Session = Depends(get_db)
     customer = Customer(
         name=customer_data.name,
         email=customer_data.email,
-        points=customer_data.points  # ✅ Nhận giá trị points từ JSON
+        points=customer_data.points  # Nhận giá trị points từ JSON
     )
     db.add(customer)
     db.commit()
@@ -52,6 +52,6 @@ def update_customer_points(id: int, update_data: CustomerUpdatePoints, db: Sessi
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
-    customer.points = update_data.points  # ✅ Cập nhật points từ body JSON
+    customer.points = update_data.points  # Cập nhật points từ body JSON
     db.commit()
     return {"message": "Customer points updated", "customer_id": id, "points": update_data.points}
