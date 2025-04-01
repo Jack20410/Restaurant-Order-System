@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter
 from typing import Dict, Any, List
-from models import food_menu, FoodItem, FoodStatusUpdate
+from models import FoodItem, FoodStatusUpdate
+from services.menu_service import MenuService
 
 router = APIRouter()
 
@@ -9,28 +10,18 @@ def get_menu():
     """
     Lấy danh sách tất cả các món ăn trong menu
     """
-    return list(food_menu.find({}, {"_id": 0}))
+    return MenuService.get_menu()
 
 @router.post("/", response_model=Dict[str, str])
 def add_food(item: FoodItem):
     """
     Thêm món ăn mới vào menu
     """
-    food_data = item.dict()
-    if food_menu.find_one({"name": food_data["name"]}):
-        raise HTTPException(status_code=400, detail="Món ăn đã tồn tại")
-    food_menu.insert_one(food_data)
-    return {"message": "Đã thêm món ăn mới"}
+    return MenuService.add_food(item)
 
 @router.put("/{food_id}", response_model=Dict[str, str])
 def update_food_status(food_id: str, update_data: FoodStatusUpdate):
     """
     Cập nhật trạng thái món ăn (available/unavailable)
     """
-    result = food_menu.update_one(
-        {"food_id": food_id}, 
-        {"$set": {"availability": update_data.availability}}
-    )
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Không tìm thấy món ăn")
-    return {"message": "Đã cập nhật trạng thái món ăn"}
+    return MenuService.update_food_status(food_id, update_data)
