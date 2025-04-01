@@ -1,37 +1,50 @@
 fastapi==0.103.1
 uvicorn==0.23.2
-pymongo==4.11.3
+pymongo==4.5.0
 python-dotenv==1.0.0
 pydantic==2.3.0
 python-multipart==0.0.9
-requests==2.31.0 
+requests==2.31.0
 
 #Run pip install -r requirements.txt to install all the dependencies
-Phạm vi trách nhiệm:
-•	- Quản lý thực đơn
-•	- Tiếp nhận & xử lý đơn hàng bếp
-•	- Cập nhật trạng thái món ăn
-📌 Database schemma (MongoDB)
-- food_menu (food_id, name, quantity, availability, image, note, category)
- 
+# Kitchen Service Documentation
 
-- kitchen_orders (order_id, items, status)
- 
-📌 API Cần Làm
-✔ GET /menu → Xem danh sách món ăn
-✔ PUT /menu/{id} → Cập nhật trạng thái món ăn	
-✔ POST /kitchen_orders → Nhận đơn hàng từ Order Service
-✔ PUT /kitchen_orders/{id} → Cập nhật trạng thái món ăn
+## Responsibilities
+# - Menu management
+# - Kitchen order processing
+# - Food status updates
 
-kitchen-service/
-│── main.py               # Chạy FastAPI app
-│── models.py             # Định nghĩa database models (MongoDB)
-│── database.py           # Kết nối MongoDB
-│── routers/
-│   ├── menu.py           # API quản lý thực đơn
-│   ├── kitchen.py        # API xử lý đơn bếp
-│── services/
-│   ├── menu_service.py   # Business logic của thực đơn
-│   ├── kitchen_service.py# Business logic của bếp
-│── requirements.txt      # Các thư viện cần cài đặt
-│── Dockerfile            # Docker build
+# ## Database Schema (MongoDB)
+# ### food_menu Collection
+# - food_id: Unique identifier
+# - name: Food item name
+# - quantity: Available quantity
+# - availability: Stock status
+# - image: Food image URL
+# - note: Additional notes
+# - category: Food category
+
+# ### kitchen_orders Collection
+# - order_id: Unique identifier
+# - items: List of ordered items
+# - status: Order status
+
+# ## API Endpoints
+# - GET /menu → View food menu
+# - PUT /menu/{id} → Update food status
+# - POST /kitchen_orders → Receive orders from Order Service
+# - PUT /kitchen_orders/{id} → Update order status
+
+## Project Structure
+# kitchen-service/
+# │── main.py               # FastAPI application entry point
+# │── models.py             # MongoDB database models
+# │── database.py           # MongoDB connection setup
+# │── routers/
+# │   ├── menu.py           # Menu management endpoints
+# │   ├── kitchen.py        # Kitchen order endpoints
+# │── services/
+# │   ├── menu_service.py   # Menu business logic
+# │   ├── kitchen_service.py# Kitchen order business logic
+# │── requirements.txt      # Project dependencies
+# │── Dockerfile            # Docker configuration
