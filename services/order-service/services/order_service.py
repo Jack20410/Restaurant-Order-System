@@ -1,44 +1,149 @@
 # order-service/services/order_service.py
 from datetime import datetime
-from ..database import get_db_connection
+from database_orders import get_db_connection
+import json
+
+from datetime import datetime
+from database_orders import get_db_connection
+from models import Order, OrderItem, Table
+from sqlalchemy.orm import Session
 
 def create_order(order_data: dict):
-    connection = get_db_connection()
-    if not connection:
+    session: Session = get_db_connection()
+    if not session:
         raise Exception("Database connection failed")
-    
-    try:
-        cursor = connection.cursor()
-        query = """
-        INSERT INTO orders (customer_id, waiter_id, table_id, status, total_price, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        """
-        values = (
-            order_data["customer_id"],
-            order_data["waiter_id"],
-            order_data["table_id"],
-            order_data["status"],
-            order_data["total_price"],
-            datetime.now()
-        )
-        cursor.execute(query, values)
-        connection.commit()
-        order_id = cursor.lastrowid
-        return order_id
-    finally:
-        connection.close()
 
-def update_order(order_id: int, update_data: dict):
+    try:
+        # Tạo đơn hàng
+        new_order = Order(
+            customer_id=order_data["customer_id"],
+            employee_id=order_data["employee_id"],
+            table_id=order_data["table_id"],
+            order_status="pending",  # Trạng thái mặc định
+            total_price=order_data["total_price"],
+            created_at=datetime.now()
+        )
+        session.add(new_order)
+        session.commit()
+        session.refresh(new_order)  # Lấy ID sau khi insert
+
+        # Thêm các món ăn vào đơn hàng
+        if "items" in order_data:
+            for item in order_data["items"]:
+                order_item = OrderItem(
+                    order_id=new_order.order_id,
+                    food_id=item["food_id"],
+                    quantity=item["quantity"],
+                    note=item.get("note", "")
+                )
+                session.add(order_item)
+
+        # Cập nhật trạng thái bàn ăn
+        table = session.query(Table).filter_by(table_id=order_data["table_id"]).first()
+        if table:
+            table.table_status = "occupied"
+        
+        session.commit()
+        return new_order.order_id
+
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def update_order_status(order_id: int, status: str):
     connection = get_db_connection()
     if not connection:
         raise Exception("Database connection failed")
     
     try:
         cursor = connection.cursor()
-        query = "UPDATE orders SET status = %s WHERE order_id = %s"
-        values = (update_data["status"], order_id)
-        cursor.execute(query, values)
+        query = "UPDATE orders SET order_status = %s WHERE order_id = %s"
+        cursor.execute(query, (status, order_id))
         connection.commit()
         return cursor.rowcount > 0
     finally:
         connection.close()
+
+def get_order_details(order_id: int):
+    connection = get_db_connection()
+    if not connection:
+        raise Exception("Database connection failed")
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        # Get order information
+        order_query = """
+        SELECT o.*, t.table_status 
+        FROM orders o
+        JOIN tables t ON o.table_id = t.table_id
+        WHERE o.order_id = %s
+        """
+        cursor.execute(order_query, (order_id,))
+        order = cursor.fetchone()
+
+        if not order:
+            return None
+
+        # Get order items
+        items_query = """
+        SELECT oi.*, f.name as food_name, f.price
+        FROM order_items oi
+        JOIN foods f ON oi.food_id = f.food_id
+        WHERE oi.order_id = %s
+        """
+        cursor.execute(items_query, (order_id,))
+        items = cursor.fetchall()
+        
+        order['items'] = items
+        return order
+    finally:
+        connection.close()
+
+
+def get_available_tables():
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        tables = session.query(Table).filter_by(table_status='available').all()
+        return [{"table_id": table.table_id, "status": table.table_status} for table in tables]
+    finally:
+        session.close()
+
+def reserve_table(table_id: int):
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        table = session.query(Table).filter_by(table_id=table_id).first()
+        if table and table.table_status == 'available':
+            table.table_status = 'occupied'
+            session.commit()
+            return True
+        return False
+    finally:
+        session.close()
+
+
+def create_table():
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        new_table = Table(
+            table_status='available'
+        )
+        session.add(new_table)
+        session.commit()
+        return {"table_id": new_table.table_id, "status": new_table.table_status}
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
