@@ -12,7 +12,6 @@ def get_available_tables():
     tables = order_service.get_available_tables()
     return {"tables": tables}
 
-# Add new endpoint to reserve a table
 @router.put("/tables/{table_id}/reserve")
 def reserve_table(table_id: int):
     try:
@@ -60,10 +59,84 @@ def update_order_status(order_id: int, status_update: OrderStatusUpdate):
         raise HTTPException(status_code=404, detail="Order not found")
     return {"message": "Order status updated successfully"}
 
+class TableCreate(BaseModel):
+    table_id: int
+    table_status: str = "AVAILABLE"
+
 @router.post("/tables/")
-def add_table():
+def add_table(table: TableCreate):
     try:
-        new_table = order_service.create_table()
+        new_table = order_service.create_table(table.dict())
         return {"message": "Table created successfully", "table": new_table}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+class OrderUpdate(BaseModel):
+    customer_id: Optional[int] = None
+    employee_id: Optional[int] = None
+    table_id: Optional[int] = None
+    total_price: Optional[float] = None
+
+@router.put("/{order_id}")
+def update_order(order_id: int, order_update: OrderUpdate):
+    try:
+        success = order_service.update_order(order_id, order_update.dict(exclude_unset=True))
+        if not success:
+            raise HTTPException(status_code=404, detail="Order not found")
+        return {"message": "Order updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{order_id}/items")
+def add_order_item(order_id: int, item: OrderItem):
+    try:
+        success = order_service.add_order_item(order_id, item.dict())
+        if not success:
+            raise HTTPException(status_code=404, detail="Order not found")
+        return {"message": "Item added successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/{order_id}/items/{item_id}")
+def update_order_item(order_id: int, item_id: int, item: OrderItem):
+    try:
+        success = order_service.update_order_item(order_id, item_id, item.dict())
+        if not success:
+            raise HTTPException(status_code=404, detail="Order item not found")
+        return {"message": "Item updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/{order_id}/items/{item_id}")
+def delete_order_item(order_id: int, item_id: int):
+    try:
+        success = order_service.delete_order_item(order_id, item_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Order item not found")
+        return {"message": "Item deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+class PaymentCreate(BaseModel):
+    order_id: int
+    amount: float
+    payment_method: str
+    transaction_id: Optional[str] = None
+
+@router.post("/payments")
+def process_payment(payment: PaymentCreate):
+    try:
+        success = order_service.process_payment(payment.dict())
+        if not success:
+            raise HTTPException(status_code=400, detail="Payment processing failed")
+        return {"message": "Payment processed successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/tables")
+def get_all_tables():
+    try:
+        tables = order_service.get_all_tables()
+        return {"tables": tables}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -134,14 +134,15 @@ def reserve_table(table_id: int):
         session.close()
 
 
-def create_table():
+def create_table(table_data: dict):
     session = get_db_connection()
     if not session:
         raise Exception("Database connection failed")
     
     try:
         new_table = Table(
-            table_status='available'
+            table_id=table_data["table_id"],
+            table_status=table_data["table_status"]
         )
         session.add(new_table)
         session.commit()
