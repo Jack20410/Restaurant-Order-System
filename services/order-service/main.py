@@ -7,7 +7,7 @@ app = FastAPI()
 # Tự động tạo bảng khi chạy app
 init_db()
 
-# app.include_router(customers.router, prefix="/customers", tags=["Customers"])
+app.include_router(customers.router, prefix="/customers", tags=["Customers"])
 app.include_router(orders.router, prefix="/orders", tags=["Orders"])
 app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 

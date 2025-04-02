@@ -54,53 +54,57 @@ def create_order(order_data: dict):
 
 
 def update_order_status(order_id: int, status: str):
-    connection = get_db_connection()
-    if not connection:
+    session = get_db_connection()
+    if not session:
         raise Exception("Database connection failed")
     
     try:
-        cursor = connection.cursor()
-        query = "UPDATE orders SET order_status = %s WHERE order_id = %s"
-        cursor.execute(query, (status, order_id))
-        connection.commit()
-        return cursor.rowcount > 0
+        order = session.query(Order).filter(Order.order_id == order_id).first()
+        if order:
+            order.order_status = status
+            session.commit()
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        raise e
     finally:
-        connection.close()
+        session.close()
 
 def get_order_details(order_id: int):
-    connection = get_db_connection()
-    if not connection:
+    session = get_db_connection()
+    if not session:
         raise Exception("Database connection failed")
     
     try:
-        cursor = connection.cursor(dictionary=True)
-        # Get order information
-        order_query = """
-        SELECT o.*, t.table_status 
-        FROM orders o
-        JOIN tables t ON o.table_id = t.table_id
-        WHERE o.order_id = %s
-        """
-        cursor.execute(order_query, (order_id,))
-        order = cursor.fetchone()
-
+        # Get order with table information
+        order = session.query(Order).filter(Order.order_id == order_id).first()
+        
         if not order:
             return None
 
+        # Convert to dictionary
+        order_dict = {
+            "order_id": order.order_id,
+            "customer_id": order.customer_id,
+            "employee_id": order.employee_id,
+            "table_id": order.table_id,
+            "order_status": order.order_status,
+            "total_price": order.total_price,
+            "created_at": order.created_at
+        }
+
         # Get order items
-        items_query = """
-        SELECT oi.*, f.name as food_name, f.price
-        FROM order_items oi
-        JOIN foods f ON oi.food_id = f.food_id
-        WHERE oi.order_id = %s
-        """
-        cursor.execute(items_query, (order_id,))
-        items = cursor.fetchall()
+        items = session.query(OrderItem).filter(OrderItem.order_id == order_id).all()
+        order_dict['items'] = [{
+            "food_id": item.food_id,
+            "quantity": item.quantity,
+            "note": item.note
+        } for item in items]
         
-        order['items'] = items
-        return order
+        return order_dict
     finally:
-        connection.close()
+        session.close()
 
 
 def get_available_tables():

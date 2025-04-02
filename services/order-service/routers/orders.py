@@ -50,9 +50,12 @@ def get_order(order_id: int):
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
+class OrderStatusUpdate(BaseModel):
+    status: str
+
 @router.put("/{order_id}/status")
-def update_order_status(order_id: int, status: str):
-    success = order_service.update_order_status(order_id, status)
+def update_order_status(order_id: int, status_update: OrderStatusUpdate):
+    success = order_service.update_order_status(order_id, status_update.status)
     if not success:
         raise HTTPException(status_code=404, detail="Order not found")
     return {"message": "Order status updated successfully"}

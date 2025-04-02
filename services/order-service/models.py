@@ -49,6 +49,7 @@ class Payment(Base):
     order_id = Column(Integer, ForeignKey("orders.order_id"))
     customer_id = Column(Integer)
     amount = Column(Float)
+    payment_type = Column(Enum('cash', 'card', 'e-wallet'))
     created_at = Column(DateTime, default=datetime.utcnow)
     
     order = relationship("Order", back_populates="payment")
