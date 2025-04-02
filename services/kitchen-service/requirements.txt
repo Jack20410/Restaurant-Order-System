@@ -5,6 +5,7 @@ python-dotenv==1.0.0
 pydantic==2.3.0
 python-multipart==0.0.9
 requests==2.31.0
+pika==1.3.2
 
 #Run pip install -r requirements.txt to install all the dependencies
 # Kitchen Service Documentation
