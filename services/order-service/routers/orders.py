@@ -140,3 +140,16 @@ def get_all_tables():
         return {"tables": tables}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+class TableStatusUpdate(BaseModel):
+    table_status: str
+
+@router.put("/tables/{table_id}")
+def update_table_status(table_id: int, status_update: TableStatusUpdate):
+    try:
+        success = order_service.update_table_status(table_id, status_update.table_status)
+        if not success:
+            raise HTTPException(status_code=404, detail="Table not found")
+        return {"message": "Table status updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

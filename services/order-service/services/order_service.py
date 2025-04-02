@@ -152,3 +152,49 @@ def create_table(table_data: dict):
         raise e
     finally:
         session.close()
+
+def update_table_status(table_id: int, status: str):
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        table = session.query(Table).filter_by(table_id=table_id).first()
+        if table:
+            table.table_status = status
+            session.commit()
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def update_order(order_id: int, order_data: dict):
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        order = session.query(Order).filter(Order.order_id == order_id).first()
+        if not order:
+            return False
+            
+        # Cập nhật các trường có trong order_data
+        if "customer_id" in order_data:
+            order.customer_id = order_data["customer_id"]
+        if "employee_id" in order_data:
+            order.employee_id = order_data["employee_id"]
+        if "table_id" in order_data:
+            order.table_id = order_data["table_id"]
+        if "total_price" in order_data:
+            order.total_price = order_data["total_price"]
+            
+        session.commit()
+        return True
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
