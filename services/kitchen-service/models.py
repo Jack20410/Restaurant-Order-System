@@ -9,14 +9,15 @@ kitchen_orders = db["kitchen_orders"]
 # === Food Menu Models ===
 class FoodItem(BaseModel):
     name: str
+    availability: bool = True
+    image: str
+    category: str
+    description: str
     price: float
-    description: Optional[str] = None
-    category: Optional[str] = None
-    availability: str = "available"
-    image_url: Optional[str] = None
+    food_id: str
 
 class FoodStatusUpdate(BaseModel):
-    availability: str
+    availability: bool
 
 # === Kitchen Orders Models ===
 class OrderItem(BaseModel):
