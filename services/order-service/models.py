@@ -6,9 +6,10 @@ from datetime import datetime
 class Customer(Base):
     __tablename__ = "customers"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255))
-    email = Column(String(255), unique=True)
-    points = Column(Integer, default=0)
+    name = Column(String(100))
+    phone = Column(String(20))
+    email = Column(String(100))
+    
     orders = relationship("Order", back_populates="customer")
 
 class Table(Base):

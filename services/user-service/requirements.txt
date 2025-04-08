@@ -7,6 +7,7 @@ sqlalchemy==2.0.27
 pymysql==1.1.0  # Changed from mysqlclient for better compatibility
 python-dotenv==1.0.1
 alembic==1.13.1
+cryptography==42.0.2
 
 # API Models & Validation
 pydantic==2.6.1
