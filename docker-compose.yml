@@ -1,6 +1,23 @@
 version: '3.8'
 
 services:
+  api-gateway:
+    build: 
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  # Main port exposed to the public
+    depends_on:
+      - user-service
+      - order-service
+      - kitchen-service
+    networks:
+      - restaurant-network
+    environment:
+      - USER_SERVICE_URL=http://user-service:8000
+      - ORDER_SERVICE_URL=http://order-service:8000
+      - KITCHEN_SERVICE_URL=http://kitchen-service:8000
+
   user-service:
     build: 
       context: ./services/user-service
@@ -8,11 +25,11 @@ services:
     ports:
       - "8001:8000"
     environment:
-    #  MUST CHANGE
-      - DATABASE_URL=mysql://user:password@user-db:3306/user_db
+      - DATABASE_URL=mysql+pymysql://user:password@user-db:3306/user_db
       - JWT_SECRET=your-secret-key
     depends_on:
-      - user-db
+      user-db:
+        condition: service_healthy
     networks:
       - restaurant-network
 
@@ -23,11 +40,10 @@ services:
     ports:
       - "8002:8000"
     environment:
-    #  MUST CHANGE
-      - DATABASE_URL=mysql://user:password@order-db:3306/order_db
+      - DATABASE_URL=mysql+pymysql://user:password@order-db:3306/order_db
     depends_on:
-      - order-db
-      - user-service
+      order-db:
+        condition: service_healthy
     networks:
       - restaurant-network
 
@@ -38,17 +54,17 @@ services:
     ports:
       - "8003:8000"
     environment:
-    #  MUST CHANGE
-      - MONGODB_URL=mongodb://mongodb:27017/kitchen_db
+      - MONGODB_URL=mongodb+srv://duclinhhopham:duclinh2503@projectsoa.4nvx0yg.mongodb.net/?retryWrites=true&w=majority&appName=ProjectSOA
+      - DB_NAME=KitchenServices
+      - USER_SERVICE_URL=http://user-service:8000
     depends_on:
-      - mongodb
+      - user-service
     networks:
       - restaurant-network
 
   user-db:
     image: mysql:8.0
     environment:
-    #  MUST CHANGE
       - MYSQL_ROOT_PASSWORD=rootpassword
       - MYSQL_DATABASE=user_db
       - MYSQL_USER=user
@@ -59,11 +75,16 @@ services:
       - user-db-data:/var/lib/mysql
     networks:
       - restaurant-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   order-db:
     image: mysql:8.0
     environment:
-    #  MUST CHANGE
       - MYSQL_ROOT_PASSWORD=rootpassword
       - MYSQL_DATABASE=order_db
       - MYSQL_USER=user
@@ -74,20 +95,16 @@ services:
       - order-db-data:/var/lib/mysql
     networks:
       - restaurant-network
-
-  mongodb:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb-data:/data/db
-    networks:
-      - restaurant-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   user-db-data:
   order-db-data:
-  mongodb-data:
 
 networks:
   restaurant-network:
