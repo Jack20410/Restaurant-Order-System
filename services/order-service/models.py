@@ -14,7 +14,7 @@ class Customer(Base):
 class Table(Base):
     __tablename__ = "tables"
     table_id = Column(Integer, primary_key=True, index=True)
-    table_status = Column(Enum('available', 'occupied', 'reserved'), default='available')
+    table_status = Column(String(50), default="available")  # Make sure it's defined as String
     orders = relationship("Order", back_populates="table")
 
 class Order(Base):

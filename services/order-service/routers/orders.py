@@ -6,27 +6,54 @@ from datetime import datetime
 
 router = APIRouter()
 
-# Add new endpoint to get available tables
+# Table management endpoints first
+@router.get("/tables")
+def get_all_tables():
+    try:
+        tables = order_service.get_all_tables()
+        return {"tables": tables}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/tables/available")
 def get_available_tables():
     tables = order_service.get_available_tables()
     return {"tables": tables}
 
-@router.put("/tables/{table_id}/reserve")
-def reserve_table(table_id: int):
+class TableStatusUpdate(BaseModel):
+    table_status: str
+
+@router.put("/tables/{table_id}")
+def update_table_status(table_id: int, status_update: TableStatusUpdate):
     try:
-        success = order_service.reserve_table(table_id)
+        print(f"Updating table {table_id} with status: {status_update.table_status}")  # Debug log
+        
+        if not status_update.table_status:
+            raise HTTPException(status_code=400, detail="Table status is required")
+            
+        if status_update.table_status.lower() not in ['available', 'occupied', 'reserved']:
+            raise HTTPException(status_code=400, detail="Invalid table status")
+        
+        success = order_service.update_table_status(table_id, status_update.table_status)
         if success:
-            return {"message": "Table reserved successfully", "table_id": table_id}
-        raise HTTPException(status_code=404, detail="Table not found or not available")
+            return {
+                "message": "Table status updated successfully",
+                "table_id": table_id,
+                "status": status_update.table_status
+            }
+        raise HTTPException(status_code=404, detail="Table not found")
     except Exception as e:
+        print(f"Error updating table status: {e}")  # Debug log
         raise HTTPException(status_code=400, detail=str(e))
 
+# Order creation only after table is selected
+# Define OrderItem first before it's used in OrderCreate
 class OrderItem(BaseModel):
     food_id: int
     quantity: int
     note: Optional[str] = None
 
+# Then define OrderCreate that uses OrderItem
 class OrderCreate(BaseModel):
     customer_id: int
     employee_id: int
@@ -37,8 +64,22 @@ class OrderCreate(BaseModel):
 @router.post("/")
 def create_order(order: OrderCreate):
     try:
+        # Verify table exists and is occupied/reserved
+        table = order_service.get_table(order.table_id)
+        if not table:
+            raise HTTPException(status_code=404, detail="Table not found")
+        if table.table_status == 'available':
+            raise HTTPException(
+                status_code=400, 
+                detail="Please select and update table status before creating order"
+            )
+            
         order_id = order_service.create_order(order.dict())
-        return {"message": "Order created successfully", "order_id": order_id}
+        return {
+            "message": "Order created successfully", 
+            "order_id": order_id,
+            "table_id": order.table_id
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -130,26 +171,5 @@ def process_payment(payment: PaymentCreate):
         if not success:
             raise HTTPException(status_code=400, detail="Payment processing failed")
         return {"message": "Payment processed successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.get("/tables")
-def get_all_tables():
-    try:
-        tables = order_service.get_all_tables()
-        return {"tables": tables}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-class TableStatusUpdate(BaseModel):
-    table_status: str
-
-@router.put("/tables/{table_id}")
-def update_table_status(table_id: int, status_update: TableStatusUpdate):
-    try:
-        success = order_service.update_table_status(table_id, status_update.table_status)
-        if not success:
-            raise HTTPException(status_code=404, detail="Table not found")
-        return {"message": "Table status updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

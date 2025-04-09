@@ -153,20 +153,27 @@ def create_table(table_data: dict):
     finally:
         session.close()
 
-def update_table_status(table_id: int, status: str):
+def update_table_status(table_id: int, new_status: str):
     session = get_db_connection()
     if not session:
         raise Exception("Database connection failed")
     
     try:
-        table = session.query(Table).filter_by(table_id=table_id).first()
-        if table:
-            table.table_status = status
-            session.commit()
-            return True
-        return False
+        print(f"Attempting to update table {table_id} to status: {new_status}")  # Debug log
+        table = session.query(Table).filter(Table.table_id == table_id).first()
+        
+        if not table:
+            print(f"Table {table_id} not found")  # Debug log
+            return False
+            
+        table.table_status = new_status.lower()
+        session.commit()
+        print(f"Table status updated successfully to: {table.table_status}")  # Debug log
+        return True
+        
     except Exception as e:
         session.rollback()
+        print(f"Error updating table status: {e}")  # Debug log
         raise e
     finally:
         session.close()
@@ -195,6 +202,27 @@ def update_order(order_id: int, order_data: dict):
         return True
     except Exception as e:
         session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def get_all_tables():
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        tables = session.query(Table).all()
+        return [
+            {
+                "table_id": table.table_id,
+                "table_status": table.table_status  # Remove .value since it's already a string
+            }
+            for table in tables
+        ]
+    except Exception as e:
+        print(f"Error fetching tables: {e}")
         raise e
     finally:
         session.close()
