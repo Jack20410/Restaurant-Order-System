@@ -10,9 +10,7 @@ COPY . .
 # Add the current directory to PYTHONPATH
 ENV PYTHONPATH=/app:$PYTHONPATH
 
-# Make the startup script executable
-RUN chmod +x start.sh
 
 EXPOSE 8000
 
-CMD ["./start.sh"] 
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
