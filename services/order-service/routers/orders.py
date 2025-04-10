@@ -6,22 +6,6 @@ from datetime import datetime
 
 router = APIRouter()
 
-# Add new endpoint to get available tables
-@router.get("/tables/available")
-def get_available_tables():
-    tables = order_service.get_available_tables()
-    return {"tables": tables}
-
-@router.put("/tables/{table_id}/reserve")
-def reserve_table(table_id: int):
-    try:
-        success = order_service.reserve_table(table_id)
-        if success:
-            return {"message": "Table reserved successfully", "table_id": table_id}
-        raise HTTPException(status_code=404, detail="Table not found or not available")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
 class OrderItem(BaseModel):
     food_id: int
     quantity: int
@@ -58,18 +42,6 @@ def update_order_status(order_id: int, status_update: OrderStatusUpdate):
     if not success:
         raise HTTPException(status_code=404, detail="Order not found")
     return {"message": "Order status updated successfully"}
-
-class TableCreate(BaseModel):
-    table_id: int
-    table_status: str = "AVAILABLE"
-
-@router.post("/tables/")
-def add_table(table: TableCreate):
-    try:
-        new_table = order_service.create_table(table.dict())
-        return {"message": "Table created successfully", "table": new_table}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 class OrderUpdate(BaseModel):
     customer_id: Optional[int] = None

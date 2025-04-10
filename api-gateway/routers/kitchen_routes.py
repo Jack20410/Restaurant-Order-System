@@ -29,7 +29,7 @@ async def forward_request(path: str, method: str = "GET", data: dict = None,
         except httpx.RequestError as e:
             raise HTTPException(status_code=503, detail=f"Kitchen service unavailable: {str(e)}")
 
-# Menu routes
+#<------------------------Menu routes------------------------>
 @router.get("/menu", response_model=List[Dict[str, Any]])
 @router.get("/menu/", response_model=List[Dict[str, Any]])
 async def get_menu():
@@ -86,7 +86,7 @@ async def update_food_availability(food_id: str, data: Dict[str, bool], authoriz
     
     return response
 
-# Kitchen order routes
+#<------------------------Kitchen order routes------------------------>
 @router.post("/orders")
 async def create_kitchen_order(order_data: Dict[str, Any], authorization: str = Header(...)):
     """Create kitchen order route forwarded to kitchen service"""

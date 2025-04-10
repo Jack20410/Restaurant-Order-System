@@ -14,11 +14,15 @@ const LoginPage = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8000/api/users/login', loginData);
+            // First, clear any existing session data
+            sessionStorage.clear();
+            
+            // Login request
+            const response = await axios.post('/api/users/login', loginData);
             const { access_token } = response.data;
             
-            // Get user info to determine role
-            const userInfoResponse = await axios.get('http://localhost:8000/api/users/users', {
+            // Get user info with the new token
+            const userInfoResponse = await axios.get('/api/users/users', {
                 headers: {
                     'Authorization': `Bearer ${access_token}`
                 }
@@ -31,26 +35,36 @@ const LoginPage = () => {
                 throw new Error('User not found');
             }
 
-            localStorage.setItem('token', access_token);
-            localStorage.setItem('userRole', currentUser.role);
+            // Store session data
+            sessionStorage.setItem('token', access_token);
+            sessionStorage.setItem('userRole', currentUser.role);
             setError('');
 
             // Redirect based on role
+            let redirectPath = '/';
             switch (currentUser.role) {
                 case 'manager':
-                    window.location.href = '/dashboard';
+                    redirectPath = '/dashboard';
                     break;
                 case 'waiter':
-                    window.location.href = '/waiter';
+                    redirectPath = '/waiter';
                     break;
                 case 'kitchen':
-                    window.location.href = '/kitchen';
+                    redirectPath = '/kitchen';
                     break;
                 default:
                     setError('Invalid role');
+                    sessionStorage.clear();
+                    return;
             }
+            
+            // Force navigation to the new path
+            navigate(redirectPath, { replace: true });
+            
         } catch (err) {
-            setError(err.response?.data?.detail || 'Login failed');
+            console.error('Login error:', err);
+            sessionStorage.clear();
+            setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
         }
     };
 

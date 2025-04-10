@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, Container } from 'react-bootstrap';
+import { Table, Container } from 'react-bootstrap';
 import axios from 'axios';
 
 const UserList = () => {
@@ -11,35 +11,33 @@ const UserList = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get('http://localhost:8000/api/users/users', {
+                const token = sessionStorage.getItem('token');
+                if (!token) {
+                    navigate('/', { replace: true });
+                    return;
+                }
+
+                const response = await axios.get('/api/users/users', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
                 setUsers(response.data);
             } catch (err) {
+                console.error('Error fetching users:', err);
                 setError(err.response?.data?.detail || 'Failed to fetch users');
+                if (err.response?.status === 401) {
+                    sessionStorage.clear();
+                    navigate('/', { replace: true });
+                }
             }
         };
 
         fetchUsers();
-    }, []);
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/');
-    };
+    }, [navigate]);
 
     return (
-        <Container className="mt-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h1>User Management</h1>
-                <Button variant="secondary" onClick={handleLogout}>
-                    Logout
-                </Button>
-            </div>
-
+        <Container>
             {error && (
                 <div className="alert alert-danger" role="alert">
                     {error}

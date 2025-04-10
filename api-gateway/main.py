@@ -4,8 +4,21 @@ import httpx
 from fastapi.security import OAuth2PasswordBearer
 from routers import user_routes, order_routes, kitchen_routes
 import json
+import socketio
 
 app = FastAPI(title="Restaurant API Gateway")
+
+# Create Socket.IO server
+sio = socketio.AsyncServer(
+    async_mode='asgi',
+    cors_allowed_origins=['http://localhost:3000']
+)
+
+# Create ASGIApp for Socket.IO
+socket_app = socketio.ASGIApp(
+    socketio_server=sio,
+    other_asgi_app=app
+)
 
 # CORS configuration
 app.add_middleware(
@@ -15,6 +28,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Socket.IO event handlers
+@sio.event
+async def connect(sid, environ, auth=None):
+    print(f"Client connected: {sid}")
+    return True
+
+@sio.event
+async def disconnect(sid):
+    print(f"Client disconnected: {sid}")
+
+@sio.event
+async def order_update(sid, data):
+    # Broadcast order update to all connected clients except sender
+    await sio.emit('order_update', data, skip_sid=sid)
+
+@sio.event
+async def menu_update(sid, data):
+    # Broadcast menu update to all connected clients except sender
+    await sio.emit('menu_update', data, skip_sid=sid)
 
 # Authentication setup
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/login")
@@ -75,3 +108,7 @@ async def health_check():
             services["kitchen_service"] = "unhealthy"
     
     return services
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(socket_app, host="0.0.0.0", port=8000)
