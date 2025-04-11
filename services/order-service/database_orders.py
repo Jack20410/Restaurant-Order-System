@@ -40,11 +40,37 @@ def test_connection():
 
 def init_db():
     try:
+        # Import models here to avoid circular imports
         from models import Order, Payment, Table, OrderItem
+        
+        # First check if we can connect to the database
+        connection = engine.connect()
+        connection.close()
+        print("✅ Successfully connected to the database!")
+        
+        # Then create tables
+        print("Creating database tables...")
         Base.metadata.create_all(bind=engine)
-        print("✅ Successfully initialized database tables!")
+        
+        # Verify tables were created
+        with engine.connect() as conn:
+            tables = Base.metadata.tables.keys()
+            existing_tables = conn.execute(text("SHOW TABLES")).fetchall()
+            existing_tables = [t[0] for t in existing_tables]
+            
+            print(f"Expected tables: {', '.join(tables)}")
+            print(f"Existing tables: {', '.join(existing_tables)}")
+            
+            if set(tables) == set(existing_tables):
+                print("✅ All tables created successfully!")
+            else:
+                missing = set(tables) - set(existing_tables)
+                if missing:
+                    print(f"❌ Missing tables: {', '.join(missing)}")
+                    raise Exception(f"Failed to create tables: {', '.join(missing)}")
+                
     except Exception as e:
-        print(f"❌ Failed to initialize database tables: {str(e)}")
+        print(f"❌ Failed to initialize database: {str(e)}")
         raise e
 
 if __name__ == "__main__":

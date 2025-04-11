@@ -16,9 +16,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database with retries
-max_retries = 5
-retry_delay = 5  # seconds
+@app.on_event("startup")
+async def startup_event():
+    print("Starting up Order Service...")
+    max_retries = 5
+    retry_delay = 5  # seconds
+    
+    for i in range(max_retries):
+        try:
+            # Test database connection and initialize tables
+            db = get_db_connection()
+            if db:
+                # Initialize database tables
+                init_db()
+                db.close()
+                print("✅ Order Service startup complete!")
+                break
+        except Exception as e:
+            if i < max_retries - 1:
+                print(f"Failed to initialize database (attempt {i + 1}/{max_retries}). Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print("❌ Failed to initialize database after maximum retries")
+                raise e
 
 # Store active WebSocket connections
 active_connections = []
@@ -73,23 +93,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
     except WebSocketDisconnect:
         active_connections.remove(websocket)
-
-for i in range(max_retries):
-    try:
-        # Test database connection
-        db = get_db_connection()
-        if db:
-            # Initialize database tables
-            init_db()
-            db.close()
-            break
-    except Exception as e:
-        if i < max_retries - 1:
-            print(f"Failed to connect to database (attempt {i + 1}/{max_retries}). Retrying in {retry_delay} seconds...")
-            time.sleep(retry_delay)
-        else:
-            print("Failed to initialize database after maximum retries")
-            raise e
 
 # Include routers
 app.include_router(orders.router, prefix="/orders", tags=["Orders"])
