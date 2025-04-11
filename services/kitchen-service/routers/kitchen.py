@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from models import KitchenOrder, OrderStatusUpdate, OrderServeUpdate
 from services.kitchen_service import KitchenService
 import requests
+from datetime import datetime
 
 router = APIRouter()
 
@@ -73,7 +74,16 @@ async def create_kitchen_order(
     Nhận đơn hàng mới từ Order Service
     Restricted to waiters and managers
     """
-    return KitchenService.create_kitchen_order(order)
+    result = KitchenService.create_kitchen_order(order)
+    
+    # Add real-time notification information to the response
+    result["notification"] = {
+        "type": "new_order",
+        "message": f"New order received for Table {order.table_id}",
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    return result
 
 @router.put("/{order_id}", response_model=Dict[str, str])
 async def update_order_status(

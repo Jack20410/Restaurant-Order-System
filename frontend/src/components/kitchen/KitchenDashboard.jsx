@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Navbar } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Navbar, Alert } from 'react-bootstrap';
 import { socketService } from '../../services/socketService';
 import MenuManagement from './MenuManagement';
 import OrderQueue from './OrderQueue';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import '../../styles/KitchenStyles.css'; // Updated path to styles folder
 
 const KitchenDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [menuItems, setMenuItems] = useState([]);
+    const [flashMessage, setFlashMessage] = useState(null);
+    const [newOrderId, setNewOrderId] = useState(null);
     const navigate = useNavigate();
 
     const fetchOrders = async () => {
@@ -56,17 +59,48 @@ const KitchenDashboard = () => {
 
         // Subscribe to real-time order updates
         socketService.subscribeToOrders((update) => {
-            setOrders(prevOrders => {
-                const orderIndex = prevOrders.findIndex(o => o.id === update.orderId);
-                if (orderIndex >= 0) {
-                    const newOrders = [...prevOrders];
-                    newOrders[orderIndex] = { ...newOrders[orderIndex], ...update };
-                    return newOrders;
-                }
-                return [...prevOrders, update];
-            });
+            console.log('Received order update:', update);
+            
+            // Handle new orders
+            if (update.notification?.type === 'new_order') {
+                // Show flash message
+                setFlashMessage({
+                    text: `New order received from Table ${update.table_id || 'Unknown'}`,
+                    type: 'info'
+                });
+                
+                // Set new order ID for highlighting
+                setNewOrderId(update.order_id);
+                
+                // Auto-dismiss flash message and highlighting after 5 seconds
+                setTimeout(() => {
+                    setFlashMessage(null);
+                    setNewOrderId(null);
+                }, 5000);
+                
+                // Add the new order to the list
+                setOrders(prevOrders => {
+                    // Check if order already exists
+                    if (!prevOrders.some(o => o.order_id === update.order_id)) {
+                        return [...prevOrders, update];
+                    }
+                    return prevOrders;
+                });
+            } 
+            // Handle order status updates
+            else if (update.orderId) {
+                setOrders(prevOrders => {
+                    const orderIndex = prevOrders.findIndex(o => o.order_id === update.orderId);
+                    if (orderIndex >= 0) {
+                        const newOrders = [...prevOrders];
+                        newOrders[orderIndex] = { ...newOrders[orderIndex], ...update };
+                        return newOrders;
+                    }
+                    return prevOrders;
+                });
+            }
         });
-
+        
         // Fetch initial data
         fetchOrders();
         fetchMenu();
@@ -80,7 +114,7 @@ const KitchenDashboard = () => {
     const handleOrderStatusUpdate = async (orderId, status) => {
         try {
             const token = sessionStorage.getItem('token');
-            await axios.patch(`/api/kitchen/orders/${orderId}`, 
+            await axios.put(`/api/kitchen/orders/${orderId}`, 
                 { status },
                 {
                     headers: {
@@ -143,6 +177,26 @@ const KitchenDashboard = () => {
                 </Container>
             </Navbar>
             <Container fluid className="p-3">
+                {flashMessage && (
+                    <Alert 
+                        variant={flashMessage.type} 
+                        className="flash-message-alert"
+                        style={{
+                            animation: 'flashAnimation 1s infinite alternate',
+                            fontWeight: 'bold',
+                            fontSize: '1.2rem',
+                            textAlign: 'center',
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 1050,
+                            marginBottom: '15px',
+                            borderLeft: '5px solid #007bff',
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                        }}
+                    >
+                        {flashMessage.text}
+                    </Alert>
+                )}
                 <Row>
                     <Col md={8}>
                         <Card className="mb-3">
@@ -153,6 +207,7 @@ const KitchenDashboard = () => {
                                 <OrderQueue 
                                     orders={orders}
                                     onStatusUpdate={handleOrderStatusUpdate}
+                                    newOrderId={newOrderId}
                                 />
                             </Card.Body>
                         </Card>

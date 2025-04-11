@@ -3,12 +3,11 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 class OrderItemCreate(BaseModel):
-    food_id: int
+    food_id: str
     quantity: int
     note: Optional[str] = None
 
 class OrderCreate(BaseModel):
-    customer_id: int
     employee_id: int
     table_id: int
     order_status: str = "pending"
@@ -33,7 +32,6 @@ class Order(OrderCreate):
 
 class OrderResponse(BaseModel):
     order_id: int
-    customer_id: int
     employee_id: int
     table_id: int
     order_status: str
@@ -42,14 +40,12 @@ class OrderResponse(BaseModel):
 
 class PaymentCreate(BaseModel):
     order_id: int
-    customer_id: int
     amount: float
     payment_type: str
     
 class PaymentResponse(BaseModel):
     payment_id: int
     order_id: int
-    customer_id: int
     amount: float
     payment_type: str
     created_at: datetime

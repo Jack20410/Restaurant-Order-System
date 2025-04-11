@@ -40,7 +40,7 @@ def test_connection():
 
 def init_db():
     try:
-        from models import Customer, Order, Payment, Table, OrderItem
+        from models import Order, Payment, Table, OrderItem
         Base.metadata.create_all(bind=engine)
         print("✅ Successfully initialized database tables!")
     except Exception as e:

@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Button, ListGroup, Modal, Badge, Form, Nav }
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { BsCart3 } from 'react-icons/bs';
+import { socketService } from '../../services/socketService';
 
 // Define category order
 const CATEGORY_ORDER = [
@@ -97,28 +98,142 @@ const MenuPage = () => {
 
     const handlePlaceOrder = async () => {
         try {
+            // Step 1: Basic validation
+            if (!cart.length) {
+                alert('Your cart is empty. Please add some items first.');
+                return;
+            }
+            
+            // Step 2: Get token
             const token = sessionStorage.getItem('token');
-            await axios.post('/api/orders', {
-                tableId: parseInt(tableId),
+            if (!token) {
+                alert('Authentication token not found. Please log in again.');
+                navigate('/login');
+                return;
+            }
+            
+            // Step 3: Log cart data for inspection
+            console.log('Current cart data:', JSON.stringify(cart, null, 2));
+            
+            // Step 4: Create minimal payload with validated food_ids
+            const orderPayload = {
+                employee_id: parseInt(sessionStorage.getItem('userId')),
+                table_id: parseInt(tableId, 10),
+                total_price: cartTotal,
                 items: cart.map(item => ({
-                    itemId: item.food_id,
-                    quantity: item.quantity,
-                    notes: item.notes || ''
-                })),
-                status: 'pending'
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
+                    food_id: item.food_id,  // Send as is, without parsing
+                    quantity: parseInt(item.quantity || 1),
+                    note: ""
+                }))
+            };
+            
+            console.log('ORDER PAYLOAD:', JSON.stringify(orderPayload, null, 2));
+            
+            // Step 5: Make a simple API call to the API gateway
+            const response = await axios.post(
+                'http://localhost:8000/api/orders',
+                orderPayload,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 }
-            });
+            );
+            
+            // Step 6: Handle success
+            console.log('Order created successfully:', response.data);
+            alert('Order placed successfully!');
+            
+            // Clear cart and close modal
             setCart([]);
             setShowCart(false);
+            
+            // Navigate back to waiter dashboard
             navigate('/waiter');
         } catch (error) {
+            // Step 7: Basic error handling 
             console.error('Error placing order:', error);
-            if (error.response?.status === 401) {
-                navigate('/login');
+            
+            if (error.response) {
+                console.error('Response status:', error.response.status);
+                console.error('Response data:', error.response.data);
+                alert(`Order failed: ${error.response.status} ${JSON.stringify(error.response.data)}`);
+            } else {
+                alert('Failed to place order. Check console for details.');
             }
+        }
+    };
+
+    // Test function to try direct order service access
+    const testDirectOrderService = async () => {
+        try {
+            // Check if cart is empty
+            if (!cart.length) {
+                alert('Your cart is empty. Please add some items first.');
+                return;
+            }
+            
+            // Get token
+            const token = sessionStorage.getItem('token');
+            if (!token) {
+                alert('Authentication token not found. Please log in again.');
+                navigate('/login');
+                return;
+            }
+            
+            // Log the raw cart items to inspect their structure
+            console.log('Raw cart items for inspection:', JSON.stringify(cart, null, 2));
+            
+            // Create minimal payload with validated food_ids
+            const orderPayload = {
+                employee_id: parseInt(sessionStorage.getItem('userId')),
+                table_id: parseInt(tableId, 10),
+                total_price: cartTotal,
+                items: cart.map(item => ({
+                    food_id: item.food_id,  // Send as is, without parsing
+                    quantity: parseInt(item.quantity || 1),
+                    note: ""
+                }))
+            };
+            
+            console.log('TEST - DIRECT ORDER PAYLOAD:', JSON.stringify(orderPayload, null, 2));
+            
+            // Try direct access to order service
+            const directResponse = await fetch('http://localhost:8002/orders', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderPayload)
+            });
+            
+            console.log('Direct service status:', directResponse.status);
+            
+            if (!directResponse.ok) {
+                const errorText = await directResponse.text();
+                console.error('Direct service error:', errorText);
+                
+                // Show more user-friendly error message
+                if (errorText.includes('value is not a valid integer')) {
+                    alert('Error: Invalid food item ID in your order. Please try again or contact support.');
+                } else {
+                    alert(`Error placing order: ${errorText}`);
+                }
+            } else {
+                const responseData = await directResponse.json();
+                console.log('Direct service success:', responseData);
+                alert('Order placed successfully!');
+                
+                // On success, clear cart and navigate
+                setCart([]);
+                setShowCart(false);
+                navigate('/waiter');
+            }
+        } catch (error) {
+            console.error('Direct service test error:', error);
+            alert(`Direct service test failed: ${error.message}`);
         }
     };
 
@@ -259,8 +374,17 @@ const MenuPage = () => {
                             variant="primary" 
                             onClick={handlePlaceOrder}
                             disabled={cart.length === 0}
+                            className="me-2"
                         >
                             Place Order
+                        </Button>
+                        {/* Test button for direct service access */}
+                        <Button 
+                            variant="info" 
+                            onClick={testDirectOrderService}
+                            disabled={cart.length === 0}
+                        >
+                            Test Direct
                         </Button>
                     </div>
                 </Modal.Footer>

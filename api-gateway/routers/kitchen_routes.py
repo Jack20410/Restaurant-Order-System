@@ -8,7 +8,7 @@ router = APIRouter()
 async def forward_request(path: str, method: str = "GET", data: dict = None, 
                          headers: dict = None, params: dict = None):
     """Forward request to kitchen service"""
-    kitchen_service_url = os.getenv("KITCHEN_SERVICE_URL", "http://kitchen-service:8000")
+    kitchen_service_url = os.getenv("KITCHEN_SERVICE_URL", "http://kitchen-service:8003")
     url = f"{kitchen_service_url}{path}"
     async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
@@ -87,12 +87,27 @@ async def update_food_availability(food_id: str, data: Dict[str, bool], authoriz
     return response
 
 #<------------------------Kitchen order routes------------------------>
+@router.get("/orders")
+async def get_kitchen_orders(authorization: str = Header(...)):
+    """Get kitchen orders route forwarded to kitchen service"""
+    headers = {"Authorization": authorization}
+    response, status_code = await forward_request(
+        path="/kitchen_orders/", 
+        method="GET",
+        headers=headers
+    )
+    
+    if status_code >= 400:
+        raise HTTPException(status_code=status_code, detail=response)
+    
+    return response
+
 @router.post("/orders")
 async def create_kitchen_order(order_data: Dict[str, Any], authorization: str = Header(...)):
     """Create kitchen order route forwarded to kitchen service"""
     headers = {"Authorization": authorization}
     response, status_code = await forward_request(
-        path="/kitchen_orders", 
+        path="/kitchen_orders/", 
         method="POST",
         data=order_data,
         headers=headers
@@ -108,7 +123,7 @@ async def update_kitchen_order_status(order_id: str, status_data: Dict[str, str]
     """Update kitchen order status route forwarded to kitchen service"""
     headers = {"Authorization": authorization}
     response, status_code = await forward_request(
-        path=f"/kitchen_orders/{order_id}", 
+        path=f"/{order_id}", 
         method="PUT",
         data=status_data,
         headers=headers

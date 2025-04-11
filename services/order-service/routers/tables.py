@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from database_orders import get_db_connection
 from models import Table
 from typing import List
 from pydantic import BaseModel
+from sqlalchemy import text
 
 router = APIRouter()
 
@@ -35,23 +36,13 @@ def update_table_status(table_id: int, table_data: TableBase, db: Session = Depe
     db.refresh(table)
     return table
 
-# Initialize tables if they don't exist
+# Initialize tables if they don't exist or if count < 10
 @router.post("/init", response_model=List[TableResponse])
-def initialize_tables(db: Session = Depends(get_db_connection)):
-    # Check if tables already exist
-    existing_tables = db.query(Table).all()
-    if existing_tables:
-        return existing_tables
-    
-    # Create 10 tables
-    tables = []
-    for i in range(1, 11):
-        table = Table(table_status='available')
-        db.add(table)
-        tables.append(table)
-    
+def initialize_tables(db: Session = Depends(get_db_connection), _: None = Body(None, include_in_schema=False)):
+    # Create 10 fresh tables
+    tables = [Table(table_status='available') for _ in range(10)]
+    db.bulk_save_objects(tables)
     db.commit()
-    for table in tables:
-        db.refresh(table)
     
-    return tables 
+    # Fetch all tables in one query
+    return db.query(Table).all() 

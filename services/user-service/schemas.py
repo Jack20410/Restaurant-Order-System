@@ -28,22 +28,4 @@ class TokenVerifyRequest(BaseModel):
 class TokenPayload(BaseModel):
     sub: str
     role: str
-    exp: int
-
-class CustomerBase(BaseModel):
-    name: str
-    phone: str
-    customer_type: str = "regular"
-    points: float = 0.0
-
-class CustomerCreate(CustomerBase):
-    pass
-
-class CustomerResponse(CustomerBase):
-    customer_id: int
-
-    class Config:
-        from_attributes = True
-
-class CustomerUpdate(BaseModel):
-    points: float 
+    exp: int 

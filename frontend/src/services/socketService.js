@@ -1,38 +1,144 @@
 import io from 'socket.io-client';
 
+// Log socket connection status
+let socketConnected = false;
+
+// Get token from session storage
+const getToken = () => sessionStorage.getItem('token');
+
+// Create socket connection
 const socket = io('http://localhost:8000', {
     auth: {
-        token: localStorage.getItem('token')
+        token: getToken()
     },
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: 10,
     reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 10000,
     transports: ['websocket', 'polling']
 });
 
-socket.on('connect_error', (error) => {
-    console.error('Socket.IO connection error:', error);
-});
-
+// Connection event handlers
 socket.on('connect', () => {
     console.log('Socket.IO connected successfully');
+    socketConnected = true;
 });
 
+socket.on('connect_error', (error) => {
+    console.error('Socket.IO connection error:', error.message);
+    socketConnected = false;
+});
+
+socket.on('disconnect', (reason) => {
+    console.log('Socket.IO disconnected:', reason);
+    socketConnected = false;
+});
+
+socket.on('reconnect', (attemptNumber) => {
+    console.log(`Socket.IO reconnected after ${attemptNumber} attempts`);
+    socketConnected = true;
+    
+    // Update auth token on reconnection
+    socket.auth = { token: getToken() };
+});
+
+socket.on('reconnect_error', (error) => {
+    console.error('Socket.IO reconnection error:', error.message);
+});
+
+// Socket service
 export const socketService = {
+    // Check if socket is connected
+    isConnected: () => socketConnected,
+    
+    // Reconnect socket manually
+    reconnect: () => {
+        if (!socketConnected) {
+            socket.auth = { token: getToken() };
+            socket.connect();
+        }
+    },
+    
+    // Subscribe to order updates
     subscribeToOrders: (callback) => {
         socket.on('order_update', callback);
     },
+    
+    // Unsubscribe from order updates
     unsubscribeFromOrders: () => {
         socket.off('order_update');
     },
+    
+    // Subscribe to menu updates
     subscribeToMenuUpdates: (callback) => {
         socket.on('menu_update', callback);
     },
+    
+    // Emit order update
     emitOrderUpdate: (orderId, status) => {
-        socket.emit('update_order', { orderId, status });
+        if (!socketConnected) {
+            console.warn('Socket not connected. Attempting to reconnect...');
+            socket.connect();
+        }
+        socket.emit('order_update', { orderId, status });
     },
+    
+    // Emit menu update
     emitMenuUpdate: (menuItem) => {
+        if (!socketConnected) {
+            console.warn('Socket not connected. Attempting to reconnect...');
+            socket.connect();
+        }
         socket.emit('update_menu', menuItem);
+    },
+    
+    // Send order to kitchen
+    sendOrderToKitchen: (orderData) => {
+        if (!socketConnected) {
+            console.warn('Socket not connected. Attempting to reconnect...');
+            socket.connect();
+        }
+        
+        const token = getToken();
+        const enrichedData = {
+            ...orderData,
+            token: token,
+            timestamp: new Date().toISOString()
+        };
+        
+        console.log('Sending order data via WebSocket:', enrichedData);
+        
+        return new Promise((resolve, reject) => {
+            // Set a timeout in case the server doesn't respond
+            const timeoutId = setTimeout(() => {
+                reject({ message: 'Timeout: No response from server after 10 seconds' });
+            }, 10000);
+            
+            socket.emit('new_order', enrichedData, (response) => {
+                clearTimeout(timeoutId); // Clear timeout on response
+                
+                console.log('Socket order response:', response);
+                
+                if (response && response.status === 'success') {
+                    resolve(response);
+                } else {
+                    const errorMsg = response?.message || 'Failed to send order to kitchen';
+                    console.error('Socket order error:', errorMsg);
+                    reject({ message: errorMsg });
+                }
+            });
+        });
+    },
+    
+    // Subscribe to notifications
+    subscribeToNotifications: (callback) => {
+        socket.on('notification', callback);
+    },
+    
+    // Unsubscribe from notifications
+    unsubscribeFromNotifications: () => {
+        socket.off('notification');
     }
 };
 

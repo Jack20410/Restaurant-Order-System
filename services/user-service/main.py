@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import users, auth, customers
+from routers import users, auth
 import database
 import uvicorn
 import time
@@ -38,7 +38,6 @@ initialize_database()
 # Add API routers
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(customers.router, prefix="/customers", tags=["Customers"])
 
 @app.get("/")
 def home():

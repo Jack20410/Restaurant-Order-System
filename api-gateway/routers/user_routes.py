@@ -82,34 +82,4 @@ async def get_all_users(authorization: str = Header(...)):
     
     return response
 
-@router.get("/customers")
-async def get_customers(authorization: str = Header(...)):
-    """Get all customers route forwarded to user service"""
-    headers = {"Authorization": authorization}
-    response, status_code = await forward_request(
-        path="/customers", 
-        method="GET",
-        headers=headers
-    )
-    
-    if status_code >= 400:
-        raise HTTPException(status_code=status_code, detail=response)
-    
-    return response
-
-@router.get("/customers/{customer_id}")
-async def get_customer(customer_id: int, authorization: str = Header(...)):
-    """Get customer by ID route forwarded to user service"""
-    headers = {"Authorization": authorization}
-    response, status_code = await forward_request(
-        path=f"/customers/{customer_id}", 
-        method="GET",
-        headers=headers
-    )
-    
-    if status_code >= 400:
-        raise HTTPException(status_code=status_code, detail=response)
-    
-    return response
-
 # Add more route forwarding as needed

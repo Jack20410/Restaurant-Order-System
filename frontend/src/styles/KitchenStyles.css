@@ -1,0 +1,48 @@
+/* Kitchen Dashboard Styles */
+
+@keyframes flashAnimation {
+  from {
+    background-color: #cce5ff;
+    border-color: #007bff;
+  }
+  to {
+    background-color: #b8daff;
+    border-color: #0056b3;
+  }
+}
+
+.flash-message-alert {
+  transition: all 0.3s ease-in-out;
+}
+
+.flash-message-alert.fade-out {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* Additional Kitchen Dashboard styling */
+.order-queue .card {
+  transition: all 0.3s ease;
+}
+
+.order-queue .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Status badge styling */
+.badge-pending {
+  background-color: #ffc107;
+}
+
+.badge-cooking {
+  background-color: #17a2b8;
+}
+
+.badge-ready {
+  background-color: #28a745;
+}
+
+.badge-served {
+  background-color: #6c757d;
+} 

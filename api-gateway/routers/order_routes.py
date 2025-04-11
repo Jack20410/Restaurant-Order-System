@@ -101,6 +101,17 @@ async def create_order(order_data: Dict[str, Any], authorization: str = Header(.
     )
     return response
 
+@router.get("/active")
+async def get_active_orders(authorization: str = Header(...)):
+    """Get active orders"""
+    headers = {"Authorization": authorization}
+    response, status_code = await forward_request(
+        path="/orders/active",
+        method="GET",
+        headers=headers
+    )
+    return response
+
 @router.get("/{order_id}")
 async def get_order(order_id: int, authorization: str = Header(...)):
     """Get order by ID"""

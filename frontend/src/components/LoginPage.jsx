@@ -14,8 +14,21 @@ const LoginPage = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            // First, clear any existing session data
+            // First, clear any existing session data and error
             sessionStorage.clear();
+            setError('');
+            
+            // Check if user exists first
+            try {
+                const checkUserResponse = await axios.get('/api/users/users');
+                const userExists = checkUserResponse.data.some(user => user.mail === loginData.mail);
+                if (!userExists) {
+                    setError('Account does not exist. Please contact manager.');
+                    return;
+                }
+            } catch (checkError) {
+                console.error('Error checking user existence:', checkError);
+            }
             
             // Login request
             const response = await axios.post('/api/users/login', loginData);
@@ -38,6 +51,8 @@ const LoginPage = () => {
             // Store session data
             sessionStorage.setItem('token', access_token);
             sessionStorage.setItem('userRole', currentUser.role);
+            sessionStorage.setItem('userId', currentUser.user_id.toString());
+            sessionStorage.setItem('userName', currentUser.name);
             setError('');
 
             // Redirect based on role
@@ -64,7 +79,24 @@ const LoginPage = () => {
         } catch (err) {
             console.error('Login error:', err);
             sessionStorage.clear();
-            setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+            
+            // Handle different error cases
+            if (err.response) {
+                switch (err.response.status) {
+                    case 401:
+                        setError('Incorrect password. Please try again.');
+                        break;
+                    case 404:
+                        setError('Account does not exist. Please contact manager.');
+                        break;
+                    default:
+                        setError(err.response.data?.detail || 'Login failed. Please try again.');
+                }
+            } else if (err.message === 'User not found') {
+                setError('Account does not exist. Please contact manager.');
+            } else {
+                setError('Login failed. Please try again later.');
+            }
         }
     };
 
@@ -95,7 +127,10 @@ const LoginPage = () => {
                                                     id="email"
                                                     placeholder="Email address"
                                                     value={loginData.mail}
-                                                    onChange={(e) => setLoginData({...loginData, mail: e.target.value})}
+                                                    onChange={(e) => {
+                                                        setLoginData({...loginData, mail: e.target.value});
+                                                        setError(''); // Clear error when user types
+                                                    }}
                                                     required
                                                 />
                                             </div>
@@ -111,7 +146,10 @@ const LoginPage = () => {
                                                     id="password"
                                                     placeholder="Password"
                                                     value={loginData.password}
-                                                    onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                                                    onChange={(e) => {
+                                                        setLoginData({...loginData, password: e.target.value});
+                                                        setError(''); // Clear error when user types
+                                                    }}
                                                     required
                                                 />
                                             </div>

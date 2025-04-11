@@ -31,7 +31,7 @@ def create_payment(payment: PaymentCreate, db: Session = Depends(get_db)):
         # Create new payment
         new_payment = Payment(
             order_id=payment.order_id,
-            customer_id=payment.customer_id,
+
             amount=payment.amount,
             payment_type=payment.payment_type,
             created_at=datetime.now()

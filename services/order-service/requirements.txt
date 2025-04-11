@@ -15,21 +15,16 @@ cryptography==42.0.2
 # •	- Quản lý khách hàng thân thiết
 
 # 📌 Database (MySQL)
-# 1️ Bảng customers (Quản lý khách hàng)
-# customer_id	name	phone	customer_type	points
 # INT (PK)	VARCHAR	VARCHAR	ENUM(vãng lai, thân thiết)	INT
 # 2️ Bảng orders (Quản lý đơn hàng)
-# order_id	customer_id	waiter_id	table_id	status	total_price	created_at
-# INT (PK)	INT (FK -> customers)	INT (FK -> users)	INT	ENUM(pending, cooking, served, paid)	FLOAT	TIMESTAMP
+# order_id   employee_id	table_id	status	total_price	created_at
+# INT (PK)	INT (FK -> employees)	INT (FK -> tables)	ENUM(pending, processing, completed, cancelled)	FLOAT	TIMESTAMP
 # 3️ Bảng payments (Xử lý thanh toán)
 # payment_id	order_id	payment_type
 # INT (PK)	INT (FK -> orders)	ENUM(cash, card, e-wallet)
 
 
 # 📌 API Cần Làm
-# ✔ POST /customers → Thêm khách hàng ===> Đã làm
-# ✔ GET /customers/{id} → Xem thông tin khách hàng ===> Đã làm
-# ✔ PUT /customers/{id} → Cập nhật điểm thành viên ===> Đã làm
 # ✔ POST /orders → Tạo đơn hàng ===> Đã làm
 # ✔ PUT /orders/{id} → Cập nhật đơn hàng ===> Đã làm
 # ✔ POST /payments → Xử lý thanh toán ===> Đã làm

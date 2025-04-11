@@ -43,9 +43,9 @@ const WaiterDashboard = () => {
                 const formattedTables = Array.isArray(response.data) ? response.data : 
                     Array.isArray(response.data.tables) ? response.data.tables : [];
                 
-                const tables = formattedTables.map(table => ({
+                const tables = formattedTables.map((table, index) => ({
                     id: table.table_id,
-                    number: table.table_id,
+                    number: index + 1,  // Use index + 1 for table numbers
                     status: table.table_status
                 }));
                 setTables(tables);
@@ -63,24 +63,71 @@ const WaiterDashboard = () => {
     const fetchActiveOrders = async () => {
         try {
             const token = sessionStorage.getItem('token');
-            const response = await axios.get('http://localhost:8000/api/orders/active', {
+            if (!token) {
+                console.error('No authentication token found');
+                navigate('/');
+                return;
+            }
+
+            const response = await axios.get('/api/orders/active', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
-            setActiveOrders(response.data);
+            
+            if (response.data) {
+                // Transform the data to match the component's needs
+                const formattedOrders = Array.isArray(response.data) ? response.data.map(order => ({
+                    id: order.order_id,
+                    table_number: order.table_id,
+                    status: order.order_status,
+                    items: order.items.map(item => ({
+                        id: item.food_id,
+                        name: item.food_id, // You might want to fetch food names from menu items
+                        quantity: item.quantity,
+                        price: 0 // You might want to fetch prices from menu items
+                    })),
+                    total: order.total_price
+                })) : [];
+                
+                setActiveOrders(formattedOrders);
+            }
         } catch (error) {
             console.error('Error fetching active orders:', error);
+            if (error.response?.status === 401) {
+                navigate('/');
+            }
         }
     };
 
     const fetchMenuItems = async () => {
         try {
-            const response = await axios.get('/api/kitchen/menu');
-            setMenuItems(response.data);
+            const token = sessionStorage.getItem('token');
+            const response = await axios.get('http://localhost:8000/api/kitchen/menu', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            // Transform menu data to expected format if needed
+            const formattedMenuItems = Array.isArray(response.data) ? response.data : [];
+            
+            // Ensure each item has the expected properties
+            const processedItems = formattedMenuItems.map(item => ({
+                id: item.food_id || item.id,
+                name: item.name || 'Unknown Item',
+                price: item.price || 0,
+                description: item.description || '',
+                category: item.category || 'Other',
+                is_available: item.is_available !== false
+            }));
+            
+            setMenuItems(processedItems);
         } catch (error) {
             console.error('Error fetching menu items:', error);
+            setMenuItems([]); // Set empty array on error
         }
     };
 
@@ -111,25 +158,98 @@ const WaiterDashboard = () => {
     const handleOrderSubmit = async (orderData) => {
         try {
             const token = sessionStorage.getItem('token');
-            await axios.post('http://localhost:8000/api/orders', 
-                {
-                    tableId: selectedTable.id,
-                    items: orderData,
-                    status: 'pending'
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+            if (!token) {
+                console.error('No authentication token found');
+                alert('Authentication error: Please log in again');
+                return;
+            }
+            
+            // Log the order data received from the form
+            console.log('Order data from form:', orderData);
+            
+            if (!selectedTable) {
+                console.error('No table selected');
+                alert('Please select a table first');
+                return;
+            }
+            
+            if (!orderData || orderData.length === 0) {
+                console.error('No items selected');
+                alert('Please add items to the order');
+                return;
+            }
+            
+            // Prepare the order data
+            const orderPayload = {
+                tableId: selectedTable.id,
+                items: orderData.map(item => ({
+                    food_id: item.id,
+                    quantity: item.quantity,
+                    note: item.note || ""
+                })),
+                status: 'pending',
+                // Include user info for audit
+                employeeId: sessionStorage.getItem('userId') || '0'
+            };
+            
+            console.log('Prepared order payload:', orderPayload);
+            
+            // Try WebSocket first, then fall back to REST API
+            let orderPlaced = false;
+            
+            // Use socket service for real-time order submission
+            try {
+                console.log('Attempting to send order via WebSocket...');
+                const result = await socketService.sendOrderToKitchen(orderPayload);
+                console.log('WebSocket order result:', result);
+                
+                // Update table status
+                await handleTableStatusChange(selectedTable.id, 'occupied');
+                
+                // Show success notification
+                alert('Order sent to kitchen successfully!');
+                
+                // Close the form
+                setShowOrderForm(false);
+                orderPlaced = true;
+                
+                // Refresh orders after successful submission
+                fetchActiveOrders();
+            } catch (socketError) {
+                console.error('WebSocket order submission failed:', socketError);
+                
+                // Fallback to REST API if WebSocket fails
+                if (!orderPlaced) {
+                    console.log('Falling back to REST API for order submission');
+                    try {
+                        const response = await axios.post('http://localhost:8000/api/orders', 
+                            orderPayload,
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            }
+                        );
+                        
+                        console.log('REST API order response:', response.data);
+                        
+                        if (response.status === 200) {
+                            // Update table status
+                            await handleTableStatusChange(selectedTable.id, 'occupied');
+                            fetchActiveOrders();
+                            setShowOrderForm(false);
+                            alert('Order sent successfully via REST API!');
+                        }
+                    } catch (restError) {
+                        console.error('REST API order submission failed:', restError);
+                        throw new Error('Both WebSocket and REST API order submission failed');
                     }
                 }
-            );
-            // Update table status
-            await handleTableStatusChange(selectedTable.id, 'occupied');
-            fetchActiveOrders();
-            setShowOrderForm(false);
+            }
         } catch (error) {
             console.error('Error submitting order:', error);
+            alert('Failed to submit order. Please try again.');
         }
     };
 
@@ -154,8 +274,24 @@ const WaiterDashboard = () => {
     };
 
     useEffect(() => {
+        console.log('Initializing WaiterDashboard...');
+        const token = sessionStorage.getItem('token');
+        
+        if (!token) {
+            console.error('No authentication token found');
+            navigate('/');
+            return;
+        }
+        
+        // Check socket connection
+        if (!socketService.isConnected()) {
+            console.log('Socket not connected, attempting to reconnect...');
+            socketService.reconnect();
+        }
+        
         // Subscribe to real-time updates
         socketService.subscribeToOrders((update) => {
+            console.log('Received order update:', update);
             setActiveOrders(prevOrders => {
                 const orderIndex = prevOrders.findIndex(o => o.id === update.orderId);
                 if (orderIndex >= 0) {
@@ -174,9 +310,10 @@ const WaiterDashboard = () => {
 
         // Cleanup socket subscription
         return () => {
+            console.log('Cleaning up WaiterDashboard...');
             socketService.unsubscribeFromOrders();
         };
-    }, []);
+    }, [navigate]);
 
     return (
         <>

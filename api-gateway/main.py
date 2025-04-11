@@ -40,6 +40,30 @@ async def disconnect(sid):
     print(f"Client disconnected: {sid}")
 
 @sio.event
+async def new_order(sid, data):
+    # Forward the new order to kitchen service and notify all clients
+    print(f"New order received: {data}")
+    try:
+        async with httpx.AsyncClient() as client:
+            # Forward order to kitchen service
+            kitchen_response = await client.post(
+                "http://kitchen-service:8003/",
+                json=data,
+                headers={"Authorization": f"Bearer {data.get('token', '')}"} 
+            )
+            
+            if kitchen_response.status_code == 200:
+                # Broadcast to all connected clients including kitchen staff
+                await sio.emit('order_update', kitchen_response.json())
+                return {"status": "success", "message": "Order sent to kitchen successfully"}
+            else:
+                print(f"Error from kitchen service: {kitchen_response.text}")
+                return {"status": "error", "message": "Failed to send order to kitchen"}
+    except Exception as e:
+        print(f"Error forwarding order to kitchen: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@sio.event
 async def order_update(sid, data):
     # Broadcast order update to all connected clients except sender
     await sio.emit('order_update', data, skip_sid=sid)

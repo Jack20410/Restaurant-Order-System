@@ -10,12 +10,11 @@ def create_payment(payment_data: dict):
     try:
         cursor = connection.cursor()
         query = """
-        INSERT INTO payments (order_id, customer_id, amount, payment_type, created_at)
+        INSERT INTO payments (order_id, amount, payment_type, created_at)
         VALUES (%s, %s, %s, %s, %s)
         """
         values = (
         payment_data["order_id"],
-        payment_data["customer_id"],
         payment_data["amount"],
         payment_data["payment_type"],  # New field
         datetime.now()

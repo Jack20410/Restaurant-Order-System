@@ -6,11 +6,11 @@ const ActiveOrders = ({ orders, onOrderUpdate }) => {
         const variants = {
             'pending': 'warning',
             'preparing': 'info',
-            'ready': 'success',
-            'served': 'primary',
+            'ready_to_serve': 'success',
+            'completed': 'primary',
             'cancelled': 'danger'
         };
-        return <Badge bg={variants[status]}>{status}</Badge>;
+        return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
     };
 
     const handleStatusUpdate = (orderId, newStatus) => {
@@ -41,11 +41,11 @@ const ActiveOrders = ({ orders, onOrderUpdate }) => {
                                     <strong>Total: ${order.total.toFixed(2)}</strong>
                                 </div>
                                 <div className="mt-3">
-                                    {order.status === 'ready' && (
+                                    {order.status === 'ready_to_serve' && (
                                         <Button
                                             variant="success"
                                             size="sm"
-                                            onClick={() => handleStatusUpdate(order.id, 'served')}
+                                            onClick={() => handleStatusUpdate(order.id, 'completed')}
                                         >
                                             Mark as Served
                                         </Button>

@@ -21,11 +21,3 @@ class User(Base):
     password = Column(String(255), nullable=False)
     role = Column(Enum(UserRole), nullable=False)
     shifts = Column(Enum(ShiftType), nullable=True)
-
-class Customer(Base):
-    __tablename__ = "customers"
-    customer_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), nullable=False)
-    phone = Column(String(15), nullable=False)
-    customer_type = Column(String(10), default="regular")  # "regular" hoặc "loyal"
-    points = Column(Float, default=0.0)  # 1000 VNĐ = 1 điểm

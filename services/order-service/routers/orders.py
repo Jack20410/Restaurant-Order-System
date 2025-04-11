@@ -6,13 +6,20 @@ from datetime import datetime
 
 router = APIRouter()
 
+@router.get("/active")
+def get_active_orders():
+    try:
+        orders = order_service.get_active_orders()
+        return orders
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 class OrderItem(BaseModel):
-    food_id: int
+    food_id: str
     quantity: int
     note: Optional[str] = None
 
 class OrderCreate(BaseModel):
-    customer_id: int
     employee_id: int
     table_id: int
     total_price: float
@@ -22,7 +29,30 @@ class OrderCreate(BaseModel):
 def create_order(order: OrderCreate):
     try:
         order_id = order_service.create_order(order.dict())
-        return {"message": "Order created successfully", "order_id": order_id}
+        
+        # Prepare order data for kitchen service
+        kitchen_order_data = {
+            "order_id": str(order_id),
+            "table_id": order.table_id,
+            "items": [
+                {
+                    "food_id": item.food_id,
+                    "quantity": item.quantity,
+                    "note": item.note
+                } for item in order.items
+            ],
+            "status": "pending",
+            "priority": "normal",
+            "created_at": datetime.now().isoformat()
+        }
+        
+        # This will be used by the API Gateway to forward to kitchen service
+        # and broadcast via WebSockets
+        return {
+            "message": "Order created successfully", 
+            "order_id": order_id,
+            "kitchen_order": kitchen_order_data
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -44,7 +74,6 @@ def update_order_status(order_id: int, status_update: OrderStatusUpdate):
     return {"message": "Order status updated successfully"}
 
 class OrderUpdate(BaseModel):
-    customer_id: Optional[int] = None
     employee_id: Optional[int] = None
     table_id: Optional[int] = None
     total_price: Optional[float] = None

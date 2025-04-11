@@ -14,20 +14,19 @@ def create_order(order_data: dict):
         raise Exception("Database connection failed")
 
     try:
-        # Tạo đơn hàng
+        # Create order
         new_order = Order(
-            customer_id=order_data["customer_id"],
             employee_id=order_data["employee_id"],
             table_id=order_data["table_id"],
-            order_status="pending",  # Trạng thái mặc định
+            order_status="pending",  # Default status
             total_price=order_data["total_price"],
             created_at=datetime.now()
         )
         session.add(new_order)
         session.commit()
-        session.refresh(new_order)  # Lấy ID sau khi insert
+        session.refresh(new_order)  # Get ID after insert
 
-        # Thêm các món ăn vào đơn hàng
+        # Add food items to the order
         if "items" in order_data:
             for item in order_data["items"]:
                 order_item = OrderItem(
@@ -38,7 +37,7 @@ def create_order(order_data: dict):
                 )
                 session.add(order_item)
 
-        # Cập nhật trạng thái bàn ăn
+        # Update table status
         table = session.query(Table).filter_by(table_id=order_data["table_id"]).first()
         if table:
             table.table_status = "occupied"
@@ -54,17 +53,50 @@ def create_order(order_data: dict):
 
 
 def update_order_status(order_id: int, status: str):
+    """
+    Update order status with proper status flow:
+    pending -> preparing -> ready_to_serve -> completed
+    Any status can go to cancelled
+    """
     session = get_db_connection()
     if not session:
         raise Exception("Database connection failed")
     
     try:
         order = session.query(Order).filter(Order.order_id == order_id).first()
-        if order:
-            order.order_status = status
-            session.commit()
-            return True
-        return False
+        if not order:
+            return False
+
+        # Validate status transition
+        valid_transitions = {
+            'pending': ['preparing', 'cancelled'],
+            'preparing': ['ready_to_serve', 'cancelled'],
+            'ready_to_serve': ['completed', 'cancelled'],
+            'completed': [],  # No transitions from completed
+            'cancelled': []   # No transitions from cancelled
+        }
+
+        if status not in valid_transitions.get(order.order_status, []):
+            raise Exception(f"Invalid status transition from {order.order_status} to {status}")
+
+        # Update order status
+        order.order_status = status
+        
+        # If order is completed or cancelled, update table status if no other active orders
+        if status in ['completed', 'cancelled']:
+            table = session.query(Table).filter(Table.table_id == order.table_id).first()
+            if table:
+                # Check if there are any other active orders for this table
+                active_orders = session.query(Order).filter(
+                    Order.table_id == table.table_id,
+                    Order.order_status.in_(['pending', 'preparing', 'ready_to_serve'])
+                ).count()
+                
+                if active_orders == 0:
+                    table.table_status = 'available'
+
+        session.commit()
+        return True
     except Exception as e:
         session.rollback()
         raise e
@@ -86,7 +118,6 @@ def get_order_details(order_id: int):
         # Convert to dictionary
         order_dict = {
             "order_id": order.order_id,
-            "customer_id": order.customer_id,
             "employee_id": order.employee_id,
             "table_id": order.table_id,
             "order_status": order.order_status,
@@ -180,10 +211,6 @@ def update_order(order_id: int, order_data: dict):
         order = session.query(Order).filter(Order.order_id == order_id).first()
         if not order:
             return False
-            
-        # Cập nhật các trường có trong order_data
-        if "customer_id" in order_data:
-            order.customer_id = order_data["customer_id"]
         if "employee_id" in order_data:
             order.employee_id = order_data["employee_id"]
         if "table_id" in order_data:
@@ -195,6 +222,50 @@ def update_order(order_id: int, order_data: dict):
         return True
     except Exception as e:
         session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def get_active_orders():
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        # Get orders that are pending, preparing, or ready to serve
+        active_orders = session.query(Order).filter(
+            Order.order_status.in_(['pending', 'preparing', 'ready_to_serve'])
+        ).order_by(Order.created_at.desc()).all()
+        
+        # Convert to list of dictionaries with items
+        result = []
+        for order in active_orders:
+            order_dict = {
+                "order_id": order.order_id,
+                "employee_id": order.employee_id,
+                "table_id": order.table_id,
+                "order_status": order.order_status,
+                "total_price": order.total_price,
+                "created_at": order.created_at.isoformat()
+            }
+            
+            # Get items for this order
+            items = session.query(OrderItem).filter(OrderItem.order_id == order.order_id).all()
+            order_dict['items'] = [{
+                "food_id": item.food_id,
+                "quantity": item.quantity,
+                "note": item.note
+            } for item in items]
+            
+            # Get table information
+            table = session.query(Table).filter(Table.table_id == order.table_id).first()
+            if table:
+                order_dict['table_status'] = table.table_status
+            
+            result.append(order_dict)
+            
+        return result
+    except Exception as e:
         raise e
     finally:
         session.close()
