@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import database, models
 from database import SessionLocal
-from schemas import UserCreate, UserResponse
+from schemas import UserCreate, UserResponse, UserUpdate
 from services import user_service
 from models import UserRole, ShiftType
 
@@ -42,3 +42,19 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         )
     
     return user_service.create_user(db=db, user=user)
+
+@router.put("/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
+    """Update a user's information"""
+    updated_user = user_service.update_user(db, user_id, user.model_dump(exclude_unset=True))
+    if updated_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated_user
+
+@router.delete("/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    """Delete a user account"""
+    success = user_service.delete_user(db, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User deleted successfully"}
