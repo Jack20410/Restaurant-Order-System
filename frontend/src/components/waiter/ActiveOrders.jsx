@@ -99,7 +99,11 @@ const ActiveOrders = ({ orders, onOrderUpdate, onPayment }) => {
     return (
         <div className="active-orders">
             <h3>Active Orders</h3>
-            <div className="row">
+            <div className="row" style={{ 
+                maxHeight: '70vh', 
+                overflowY: 'auto',
+                paddingRight: '5px'
+            }}>
                 {Object.entries(groupedOrders).map(([tableNumber, tableOrders]) => {
                     const tableStatus = getTableStatus(tableOrders);
                     const tableTotal = calculateTableTotal(tableOrders);
@@ -190,3 +194,5 @@ const ActiveOrders = ({ orders, onOrderUpdate, onPayment }) => {
 };
 
 export default ActiveOrders;
+
+//test
