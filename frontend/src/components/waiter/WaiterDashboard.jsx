@@ -253,12 +253,15 @@ const WaiterDashboard = () => {
         }
     };
 
-    const handleOrderComplete = async (orderId) => {
+    const handleOrderComplete = async (orderId, status) => {
         try {
+            console.log(`Updating order ${orderId} to status: ${status}`);
             const token = sessionStorage.getItem('token');
-            await axios.put(`http://localhost:8000/api/orders/${orderId}`,
+            
+            // Use the correct endpoint for status updates
+            await axios.put(`/api/orders/${orderId}/status`,
                 {
-                    status: 'completed'
+                    status: status
                 },
                 {
                     headers: {
@@ -267,9 +270,30 @@ const WaiterDashboard = () => {
                     }
                 }
             );
+            
+            // Emit the update via WebSocket
+            socketService.emitOrderUpdate({
+                order_id: orderId,
+                status: status
+            });
+            
+            // Update local state immediately for better UX
+            setActiveOrders(prevOrders => 
+                prevOrders.map(order => 
+                    order.id === orderId 
+                        ? { ...order, status: status } 
+                        : order
+                )
+            );
+            
+            // Refresh data to ensure consistency
             fetchActiveOrders();
+            fetchTables();
+            
+            console.log(`Order ${orderId} updated to ${status} successfully`);
         } catch (error) {
-            console.error('Error completing order:', error);
+            console.error('Error updating order:', error);
+            alert(`Failed to update order: ${error.message}`);
         }
     };
 

@@ -2,19 +2,38 @@ import React from 'react';
 import { Card, Badge, Button, ListGroup } from 'react-bootstrap';
 
 const OrderQueue = ({ orders, onStatusUpdate, newOrderId }) => {
+    // Debug log orders
+    console.log('Orders in OrderQueue:', orders);
+    
     const getStatusColor = (status) => {
         switch (status) {
             case 'pending': return 'warning';
+            case 'preparing': return 'info';  // Added 'preparing' status
             case 'cooking': return 'info';
             case 'ready': return 'success';
+            case 'ready_to_serve': return 'success';  // Added 'ready_to_serve' status
             case 'served': return 'secondary';
+            case 'completed': return 'secondary';  // Added 'completed' status
             default: return 'primary';
         }
     };
 
+    // Handle empty orders array
+    if (!orders || orders.length === 0) {
+        return (
+            <div className="text-center p-4">
+                <h5 className="text-muted">No active orders</h5>
+                <p>New orders will appear here</p>
+            </div>
+        );
+    }
+
     return (
         <div className="order-queue">
             {orders.map(order => {
+                // Extract order status - handle different field names
+                const orderStatus = order.status || order.order_status || 'pending';
+                
                 // Check if this is the highlighted new order
                 const isNewOrder = order.order_id === newOrderId;
                 
@@ -31,40 +50,48 @@ const OrderQueue = ({ orders, onStatusUpdate, newOrderId }) => {
                         <Card.Header style={isNewOrder ? { backgroundColor: '#d4edda' } : {}}>
                             <div className="d-flex justify-content-between align-items-center">
                                 <h5>Table {order.tableId || order.table_id}</h5>
-                                <Badge bg={getStatusColor(order.status)}>
-                                    {order.status}
+                                <Badge bg={getStatusColor(orderStatus)}>
+                                    {orderStatus}
                                 </Badge>
                             </div>
-                            {isNewOrder && <span className="text-success font-weight-bold">New Order!</span>}
+                            {isNewOrder && <span className="text-success fw-bold">New Order!</span>}
                         </Card.Header>
                         <Card.Body>
                             <ListGroup>
                                 {order.items && order.items.map((item, index) => (
                                     <ListGroup.Item key={`${order.order_id}-item-${index}`}>
                                         {item.name || `Item #${item.food_id}`} x {item.quantity}
-                                        {item.notes && (
+                                        {(item.notes || item.note) && (
                                             <small className="text-muted d-block">
-                                                Note: {item.notes}
+                                                Note: {item.notes || item.note}
                                             </small>
                                         )}
                                     </ListGroup.Item>
                                 ))}
                             </ListGroup>
                             <div className="mt-3">
-                                {order.status === 'pending' && (
+                                {orderStatus === 'pending' && (
                                     <Button 
                                         variant="primary"
-                                        onClick={() => onStatusUpdate(order.order_id, 'cooking')}
+                                        onClick={() => onStatusUpdate(order.order_id, 'preparing')}
                                     >
-                                        Start Cooking
+                                        Start Preparing
                                     </Button>
                                 )}
-                                {order.status === 'cooking' && (
+                                {orderStatus === 'preparing' && (
                                     <Button 
                                         variant="success"
-                                        onClick={() => onStatusUpdate(order.order_id, 'ready')}
+                                        onClick={() => onStatusUpdate(order.order_id, 'ready_to_serve')}
                                     >
                                         Mark as Ready
+                                    </Button>
+                                )}
+                                {orderStatus === 'ready_to_serve' && (
+                                    <Button 
+                                        variant="secondary"
+                                        onClick={() => onStatusUpdate(order.order_id, 'completed')}
+                                    >
+                                        Mark as Served
                                     </Button>
                                 )}
                             </div>

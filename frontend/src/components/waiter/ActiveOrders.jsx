@@ -2,6 +2,8 @@ import React from 'react';
 import { Card, ListGroup, Badge, Button } from 'react-bootstrap';
 
 const ActiveOrders = ({ orders, onOrderUpdate }) => {
+    console.log('Orders in ActiveOrders component:', orders);
+    
     const getStatusBadge = (status) => {
         const variants = {
             'pending': 'warning',
@@ -14,8 +16,23 @@ const ActiveOrders = ({ orders, onOrderUpdate }) => {
     };
 
     const handleStatusUpdate = (orderId, newStatus) => {
+        console.log(`Calling order update for order ${orderId} with status ${newStatus}`);
         onOrderUpdate(orderId, newStatus);
     };
+
+    // Handle empty orders array
+    if (!orders || orders.length === 0) {
+        return (
+            <div className="active-orders">
+                <h3>Active Orders</h3>
+                <Card>
+                    <Card.Body className="text-center text-muted">
+                        No active orders available
+                    </Card.Body>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="active-orders">
@@ -30,21 +47,20 @@ const ActiveOrders = ({ orders, onOrderUpdate }) => {
                             </Card.Header>
                             <Card.Body>
                                 <ListGroup variant="flush">
-                                    {order.items.map(item => (
-                                        <ListGroup.Item key={item.id} className="d-flex justify-content-between">
-                                            <span>{item.name} x {item.quantity}</span>
-                                            <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                    {order.items && order.items.map((item, index) => (
+                                        <ListGroup.Item key={`${order.id}-item-${index}`} className="d-flex justify-content-between">
+                                            <span>{item.name || `Item #${item.id || item.food_id}`} x {item.quantity}</span>
+                                            <span>{(item.price * item.quantity).toFixed(2) || 'N/A'}</span>
                                         </ListGroup.Item>
                                     ))}
                                 </ListGroup>
                                 <div className="mt-3">
                                     <strong>Total: ${order.total.toFixed(2)}</strong>
                                 </div>
-                                <div className="mt-3">
+                                <div className="mt-3 d-flex gap-2">
                                     {order.status === 'ready_to_serve' && (
                                         <Button
                                             variant="success"
-                                            size="sm"
                                             onClick={() => handleStatusUpdate(order.id, 'completed')}
                                         >
                                             Mark as Served
@@ -53,7 +69,6 @@ const ActiveOrders = ({ orders, onOrderUpdate }) => {
                                     {order.status === 'pending' && (
                                         <Button
                                             variant="danger"
-                                            size="sm"
                                             onClick={() => handleStatusUpdate(order.id, 'cancelled')}
                                         >
                                             Cancel Order

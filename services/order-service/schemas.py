@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 
 class OrderItemCreate(BaseModel):
@@ -10,7 +10,7 @@ class OrderItemCreate(BaseModel):
 class OrderCreate(BaseModel):
     employee_id: int
     table_id: int
-    order_status: str = "pending"
+    order_status: Literal['pending', 'preparing', 'ready_to_serve', 'completed', 'cancelled'] = 'pending'
     total_price: float
     items: List[OrderItemCreate]
 

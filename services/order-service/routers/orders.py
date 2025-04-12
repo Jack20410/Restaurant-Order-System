@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from services import order_service
 from datetime import datetime
+from schemas import OrderCreate, OrderItem, OrderItemCreate
 
 router = APIRouter()
 
@@ -14,47 +15,84 @@ def get_active_orders():
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-class OrderItem(BaseModel):
-    food_id: str
-    quantity: int
-    note: Optional[str] = None
-
-class OrderCreate(BaseModel):
-    employee_id: int
-    table_id: int
-    total_price: float
-    items: List[OrderItem]
-
 @router.post("/")
 def create_order(order: OrderCreate):
     try:
-        order_id = order_service.create_order(order.dict())
+        # 1. Log received order
+        print("Received order data:", order.dict())
         
-        # Prepare order data for kitchen service
-        kitchen_order_data = {
-            "order_id": str(order_id),
-            "table_id": order.table_id,
-            "items": [
-                {
-                    "food_id": item.food_id,
-                    "quantity": item.quantity,
-                    "note": item.note
-                } for item in order.items
-            ],
-            "status": "pending",
-            "priority": "normal",
-            "created_at": datetime.now().isoformat()
-        }
-        
-        # This will be used by the API Gateway to forward to kitchen service
-        # and broadcast via WebSockets
-        return {
-            "message": "Order created successfully", 
+        # 2. Validate order data
+        if not order.items:
+            raise HTTPException(
+                status_code=422,
+                detail="Order must contain at least one item"
+            )
+            
+        # 3. Check for duplicate items
+        food_ids = [item.food_id for item in order.items]
+        duplicates = set([x for x in food_ids if food_ids.count(x) > 1])
+        if duplicates:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Duplicate food items found: {', '.join(duplicates)}"
+            )
+            
+        # 4. Validate individual items
+        for idx, item in enumerate(order.items):
+            if not item.food_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Item at position {idx} has no food_id"
+                )
+            if item.quantity <= 0:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Item {item.food_id} must have quantity greater than 0"
+                )
+                
+        # 5. Create order in database
+        try:
+            order_id = order_service.create_order(order.dict())
+        except Exception as e:
+            print(f"Database error: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create order: {str(e)}"
+            )
+            
+        # 6. Prepare response
+        response_data = {
+            "message": "Order created successfully",
             "order_id": order_id,
-            "kitchen_order": kitchen_order_data
+            "order_details": {
+                "employee_id": order.employee_id,
+                "table_id": order.table_id,
+                "status": order.order_status,
+                "total_price": order.total_price,
+                "items": [
+                    {
+                        "food_id": item.food_id,
+                        "quantity": item.quantity,
+                        "note": item.note or ""
+                    } for item in order.items
+                ]
+            }
         }
+        
+        print("Order created successfully:", response_data)
+        return response_data
+        
+    except HTTPException as e:
+        # Re-raise HTTP exceptions
+        print(f"Validation error: {e.detail}")
+        raise e
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Handle unexpected errors
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 @router.get("/{order_id}")
 def get_order(order_id: int):

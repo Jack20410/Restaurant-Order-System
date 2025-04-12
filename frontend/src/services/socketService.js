@@ -76,12 +76,32 @@ export const socketService = {
     },
     
     // Emit order update
-    emitOrderUpdate: (orderId, status) => {
+    emitOrderUpdate: (orderData) => {
         if (!socketConnected) {
             console.warn('Socket not connected. Attempting to reconnect...');
             socket.connect();
         }
-        socket.emit('order_update', { orderId, status });
+        
+        console.log('Emitting order update via WebSocket:', orderData);
+        
+        // Support both simple status updates and new order notifications
+        if (orderData.type === 'new_order') {
+            // This is a new order notification
+            socket.emit('order_update', {
+                type: 'new_order',
+                order_id: orderData.order_id,
+                table_id: orderData.table_id,
+                status: orderData.status || 'pending',
+                items: orderData.items,
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            // This is a simple status update
+            socket.emit('order_update', { 
+                orderId: orderData.orderId || orderData.order_id, 
+                status: orderData.status 
+            });
+        }
     },
     
     // Emit menu update

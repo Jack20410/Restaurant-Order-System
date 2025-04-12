@@ -7,18 +7,23 @@ from datetime import datetime
 from database_orders import get_db_connection
 from models import Order, OrderItem, Table
 from sqlalchemy.orm import Session
+from typing import Dict, Any
 
-def create_order(order_data: dict):
+def create_order(order_data: Dict[str, Any]):
     session: Session = get_db_connection()
     if not session:
         raise Exception("Database connection failed")
 
     try:
-        # Create order
+        # Create order with explicit order_status validation
+        order_status = order_data.get("order_status", "pending")
+        if order_status not in ['pending', 'preparing', 'ready_to_serve', 'completed', 'cancelled']:
+            raise ValueError(f"Invalid order status: {order_status}")
+
         new_order = Order(
             employee_id=order_data["employee_id"],
             table_id=order_data["table_id"],
-            order_status="pending",  # Default status
+            order_status=order_status,
             total_price=order_data["total_price"],
             created_at=datetime.now()
         )
@@ -31,7 +36,7 @@ def create_order(order_data: dict):
             for item in order_data["items"]:
                 order_item = OrderItem(
                     order_id=new_order.order_id,
-                    food_id=item["food_id"],
+                    food_id=str(item["food_id"]),  # Ensure food_id is string
                     quantity=item["quantity"],
                     note=item.get("note", "")
                 )
