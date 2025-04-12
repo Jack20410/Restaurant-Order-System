@@ -1,87 +1,150 @@
-import React from 'react';
-import { Card, ListGroup, Badge, Button } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Card, ListGroup, Badge, Button, Modal } from 'react-bootstrap';
 
-const ActiveOrders = ({ orders, onOrderUpdate }) => {
-    console.log('Orders in ActiveOrders component:', orders);
-    
+const ActiveOrders = ({ orders, onOrderUpdate, onPayment }) => {
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [selectedTableOrders, setSelectedTableOrders] = useState(null);
+
+    const formatVND = (amount) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    };
+
+    // Group orders by table
+    const groupedOrders = orders.reduce((acc, order) => {
+        if (!acc[order.table_number]) {
+            acc[order.table_number] = [];
+        }
+        acc[order.table_number].push(order);
+        return acc;
+    }, {});
+
+    const calculateTableTotal = (tableOrders) => {
+        return tableOrders.reduce((sum, order) => sum + order.total, 0);
+    };
+
+    const getTableStatus = (tableOrders) => {
+        const allCompleted = tableOrders.every(order => order.status === 'completed');
+        const hasCancelled = tableOrders.some(order => order.status === 'cancelled');
+        
+        if (hasCancelled) return 'cancelled';
+        if (allCompleted) return 'ready_to_pay';
+        return 'in_progress';
+    };
+
     const getStatusBadge = (status) => {
         const variants = {
-            'pending': 'warning',
-            'preparing': 'info',
-            'ready_to_serve': 'success',
+            'in_progress': 'warning',
+            'ready_to_pay': 'success',
+            'cancelled': 'danger',
             'completed': 'primary',
-            'cancelled': 'danger'
+            'preparing': 'info',
+            'pending': 'secondary',
+            'served': 'success',  // Add variant for served status
+            'ready_to_serve': 'info'  // Add variant for ready_to_serve status
         };
-        return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
+        const labels = {
+            'in_progress': 'In Progress',
+            'ready_to_pay': 'Ready to Pay',
+            'cancelled': 'Cancelled',
+            'completed': 'Completed',
+            'preparing': 'Preparing',
+            'pending': 'Pending',
+            'served': 'Served',  // Add label for served status
+            'ready_to_serve': 'Ready to Serve'  // Add label for ready_to_serve status
+        };
+        return <Badge bg={variants[status]}>{labels[status]}</Badge>;
     };
 
-    const handleStatusUpdate = (orderId, newStatus) => {
-        console.log(`Calling order update for order ${orderId} with status ${newStatus}`);
-        onOrderUpdate(orderId, newStatus);
+    const handleViewDetails = (tableNumber) => {
+        setSelectedTableOrders(groupedOrders[tableNumber]);
+        setShowDetailsModal(true);
     };
 
-    // Handle empty orders array
-    if (!orders || orders.length === 0) {
-        return (
-            <div className="active-orders">
-                <h3>Active Orders</h3>
-                <Card>
-                    <Card.Body className="text-center text-muted">
-                        No active orders available
-                    </Card.Body>
-                </Card>
-            </div>
-        );
-    }
+    const handlePayment = (tableNumber) => {
+        const tableOrders = groupedOrders[tableNumber];
+        if (getTableStatus(tableOrders) === 'ready_to_pay') {
+            onPayment(tableNumber, tableOrders);
+        }
+    };
 
     return (
         <div className="active-orders">
             <h3>Active Orders</h3>
             <div className="row">
-                {orders.map(order => (
-                    <div key={order.id} className="col-md-6 mb-3">
-                        <Card>
+                {Object.entries(groupedOrders).map(([tableNumber, tableOrders]) => {
+                    const tableStatus = getTableStatus(tableOrders);
+                    const tableTotal = calculateTableTotal(tableOrders);
+
+                    return (
+                        <div key={tableNumber} className="col-12 mb-3">
+                            <Card>
+                                <Card.Body>
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 className="mb-0">Table {tableNumber}</h5>
+                                        {getStatusBadge(tableStatus)}
+                                    </div>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <strong>Total: {formatVND(tableTotal)}</strong>
+                                        <div className="d-flex gap-2">
+                                            <Button
+                                                variant="primary"
+                                                onClick={() => handleViewDetails(tableNumber)}
+                                            >
+                                                View Details
+                                            </Button>
+                                            <Button
+                                                variant="success"
+                                                disabled={tableStatus !== 'ready_to_pay'}
+                                                onClick={() => handlePayment(tableNumber)}
+                                            >
+                                                Payment
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>
+                        Order Details - Table {selectedTableOrders?.[0]?.table_number}
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedTableOrders?.map((order) => (
+                        <Card key={order.id} className="mb-3">
                             <Card.Header className="d-flex justify-content-between align-items-center">
-                                <span>Table {order.table_number}</span>
+                                <span>Order #{order.id}</span>
                                 {getStatusBadge(order.status)}
                             </Card.Header>
-                            <Card.Body>
-                                <ListGroup variant="flush">
-                                    {order.items && order.items.map((item, index) => (
-                                        <ListGroup.Item key={`${order.id}-item-${index}`} className="d-flex justify-content-between">
-                                            <span>{item.name || `Item #${item.id || item.food_id}`} x {item.quantity}</span>
-                                            <span>{(item.price * item.quantity).toFixed(2) || 'N/A'}</span>
-                                        </ListGroup.Item>
-                                    ))}
-                                </ListGroup>
-                                <div className="mt-3">
-                                    <strong>Total: ${order.total.toFixed(2)}</strong>
-                                </div>
-                                <div className="mt-3 d-flex gap-2">
-                                    {order.status === 'ready_to_serve' && (
-                                        <Button
-                                            variant="success"
-                                            onClick={() => handleStatusUpdate(order.id, 'completed')}
-                                        >
-                                            Mark as Served
-                                        </Button>
-                                    )}
-                                    {order.status === 'pending' && (
-                                        <Button
-                                            variant="danger"
-                                            onClick={() => handleStatusUpdate(order.id, 'cancelled')}
-                                        >
-                                            Cancel Order
-                                        </Button>
-                                    )}
-                                </div>
-                            </Card.Body>
+                            <ListGroup variant="flush">
+                                {order.items?.map((item, index) => (
+                                    <ListGroup.Item 
+                                        key={index}
+                                        className="d-flex justify-content-between"
+                                    >
+                                        <span>{item.name} x {item.quantity}</span>
+                                        <span>{formatVND(item.price * item.quantity)}</span>
+                                    </ListGroup.Item>
+                                ))}
+                                <ListGroup.Item className="d-flex justify-content-between">
+                                    <strong>Order Total:</strong>
+                                    <strong>{formatVND(order.total)}</strong>
+                                </ListGroup.Item>
+                            </ListGroup>
                         </Card>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </Modal.Body>
+            </Modal>
         </div>
     );
 };
 
-export default ActiveOrders; 
+export default ActiveOrders;

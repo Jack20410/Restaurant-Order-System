@@ -45,6 +45,11 @@ const TableGrid = ({ tables, onTableSelect, onTableStatusChange }) => {
         handleCloseModal();
     };
 
+    const handleCancelTable = () => {
+        onTableStatusChange(selectedTable.id, 'available');
+        handleCloseModal();
+    };
+
     return (
         <>
             <div className="table-grid">
@@ -81,11 +86,8 @@ const TableGrid = ({ tables, onTableSelect, onTableStatusChange }) => {
                 <Modal.Body>
                     {selectedTable?.status === 'available' ? (
                         <div className="d-grid gap-2">
-                            <Button variant="success" onClick={handleUseTable}>
+                            <Button variant="primary" onClick={handleUseTable}>
                                 Use this table
-                            </Button>
-                            <Button variant="secondary" onClick={handleCloseModal}>
-                                Close
                             </Button>
                         </div>
                     ) : (
@@ -96,8 +98,8 @@ const TableGrid = ({ tables, onTableSelect, onTableStatusChange }) => {
                             <Button variant="success" onClick={handleMakePayment}>
                                 Make Payment
                             </Button>
-                            <Button variant="secondary" onClick={handleCloseModal}>
-                                Close
+                            <Button variant="outline-danger" onClick={handleCancelTable}>
+                                Cancel Table
                             </Button>
                         </div>
                     )}
@@ -107,4 +109,4 @@ const TableGrid = ({ tables, onTableSelect, onTableStatusChange }) => {
     );
 };
 
-export default TableGrid; 
+export default TableGrid;
