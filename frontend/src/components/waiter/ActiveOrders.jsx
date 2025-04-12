@@ -63,6 +63,10 @@ const ActiveOrders = ({ orders, onOrderUpdate, onPayment }) => {
         setShowDetailsModal(true);
     };
 
+    const handleCancelOrder = (orderId) => {
+        onOrderUpdate(orderId, 'cancelled');
+    };
+
     const handlePayment = (tableNumber) => {
         const tableOrders = groupedOrders[tableNumber];
         if (getTableStatus(tableOrders) === 'ready_to_pay') {
@@ -88,173 +92,8 @@ const ActiveOrders = ({ orders, onOrderUpdate, onPayment }) => {
         setShowPaymentModal(true);
     };
 
-    const handlePaymentSubmit = async () => {
-        if (!paymentInfo.customerName || !paymentInfo.age || !paymentInfo.birthDate) {
-            alert('Vui lòng nhập đầy đủ thông tin khách hàng trước khi thanh toán.');
-            return;
-        }
 
-        const paymentData = {
-            tableNumber: currentTableData.tableNumber,
-            orders: currentTableData.orders,
-            customerInfo: paymentInfo,
-            total: calculateTableTotal(currentTableData.orders),
-            discount: paymentInfo.membershipCard === 'yes' ? 0.1 : 0,
-            paymentMethod: paymentInfo.paymentMethod,
-            note: paymentInfo.note,
-            waiterId: 'waiter1', // Get from auth context in real app
-            timestamp: new Date().toISOString()
-        };
 
-        try {
-            await onPayment(paymentData);
-            setShowPaymentModal(false);
-            setPaymentInfo({
-                customerName: '',
-                age: '',
-                birthDate: '',
-                membershipCard: 'no',
-                membershipId: '',
-                paymentMethod: 'cash',
-                note: '',
-                cashReceived: 0
-            });
-        } catch (error) {
-            alert('Thanh toán thất bại. Vui lòng thử lại.');
-        }
-    };
-
-    const PaymentModal = () => (
-        <Modal show={showPaymentModal} onHide={() => setShowPaymentModal(false)} size="lg">
-            <Modal.Header closeButton>
-                <Modal.Title>Payment Information - Table {currentTableData?.tableNumber}</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <Form>
-                    <Row>
-                        <Col md={6}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Tên khách hàng *</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    value={paymentInfo.customerName}
-                                    onChange={(e) => setPaymentInfo({...paymentInfo, customerName: e.target.value})}
-                                    required
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={3}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Tuổi *</Form.Label>
-                                <Form.Control
-                                    type="number"
-                                    value={paymentInfo.age}
-                                    onChange={(e) => setPaymentInfo({...paymentInfo, age: e.target.value})}
-                                    required
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={3}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Ngày sinh *</Form.Label>
-                                <Form.Control
-                                    type="date"
-                                    value={paymentInfo.birthDate}
-                                    onChange={(e) => setPaymentInfo({...paymentInfo, birthDate: e.target.value})}
-                                    required
-                                />
-                            </Form.Group>
-                        </Col>
-                    </Row>
-
-                    <Row>
-                        <Col md={6}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Thẻ thành viên</Form.Label>
-                                <Form.Select
-                                    value={paymentInfo.membershipCard}
-                                    onChange={(e) => setPaymentInfo({...paymentInfo, membershipCard: e.target.value})}
-                                >
-                                    <option value="no">Không</option>
-                                    <option value="yes">Có</option>
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                        {paymentInfo.membershipCard === 'yes' && (
-                            <Col md={6}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Mã thẻ thành viên</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        value={paymentInfo.membershipId}
-                                        onChange={(e) => setPaymentInfo({...paymentInfo, membershipId: e.target.value})}
-                                    />
-                                </Form.Group>
-                            </Col>
-                        )}
-                    </Row>
-
-                    <Form.Group className="mb-3">
-                        <Form.Label>Phương thức thanh toán</Form.Label>
-                        <Form.Select
-                            value={paymentInfo.paymentMethod}
-                            onChange={(e) => setPaymentInfo({...paymentInfo, paymentMethod: e.target.value})}
-                        >
-                            <option value="cash">Tiền mặt</option>
-                            <option value="card">Thẻ tín dụng</option>
-                            <option value="transfer">Chuyển khoản</option>
-                            <option value="ewallet">Ví điện tử</option>
-                        </Form.Select>
-                    </Form.Group>
-
-                    {paymentInfo.paymentMethod === 'cash' && (
-                        <Form.Group className="mb-3">
-                            <Form.Label>Số tiền nhận</Form.Label>
-                            <Form.Control
-                                type="number"
-                                value={paymentInfo.cashReceived}
-                                onChange={(e) => setPaymentInfo({...paymentInfo, cashReceived: parseFloat(e.target.value)})}
-                            />
-                            {paymentInfo.cashReceived > 0 && (
-                                <Form.Text>
-                                    Tiền thối: {formatVND(paymentInfo.cashReceived - calculateTableTotal(currentTableData?.orders))}
-                                </Form.Text>
-                            )}
-                        </Form.Group>
-                    )}
-
-                    <Form.Group className="mb-3">
-                        <Form.Label>Ghi chú</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={paymentInfo.note}
-                            onChange={(e) => setPaymentInfo({...paymentInfo, note: e.target.value})}
-                        />
-                    </Form.Group>
-
-                    <div className="payment-summary">
-                        <h5>Tổng quan thanh toán</h5>
-                        <p>Tổng tiền: {formatVND(calculateTableTotal(currentTableData?.orders))}</p>
-                        {paymentInfo.membershipCard === 'yes' && (
-                            <>
-                                <p>Giảm giá (10%): {formatVND(calculateTableTotal(currentTableData?.orders) * 0.1)}</p>
-                                <p>Tổng thanh toán sau giảm giá: {formatVND(calculateTableTotal(currentTableData?.orders) * 0.9)}</p>
-                            </>
-                        )}
-                    </div>
-                </Form>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={() => setShowPaymentModal(false)}>
-                    Hủy
-                </Button>
-                <Button variant="primary" onClick={handlePaymentSubmit}>
-                    Xác nhận thanh toán
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
 
     // Modify the existing payment button to use the new handler
     return (
@@ -309,7 +148,19 @@ const ActiveOrders = ({ orders, onOrderUpdate, onPayment }) => {
                         <Card key={order.id} className="mb-3">
                             <Card.Header className="d-flex justify-content-between align-items-center">
                                 <span>Order #{order.id}</span>
-                                {getStatusBadge(order.status)}
+                                <div className="d-flex gap-2 align-items-center">
+                                    {getStatusBadge(order.status)}
+                                    {order.status !== 'cancelled' && (
+                                        <Button 
+                                            variant="danger" 
+                                            size="sm"
+                                            onClick={() => handleCancelOrder(order.id)}
+                                            disabled={order.status !== 'pending'}
+                                        >
+                                            Cancel Order
+                                        </Button>
+                                    )}
+                                </div>
                             </Card.Header>
                             <ListGroup variant="flush">
                                 {order.items?.map((item, index) => (
