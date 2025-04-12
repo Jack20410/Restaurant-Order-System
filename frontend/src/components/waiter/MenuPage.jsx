@@ -80,8 +80,16 @@ const MenuPage = () => {
                     i.food_id === item.food_id ? { ...i, quantity: i.quantity + 1 } : i
                 );
             }
-            return [...prevCart, { ...item, quantity: 1 }];
+            return [...prevCart, { ...item, quantity: 1, note: '' }];  // Initialize note as empty string
         });
+    };
+
+    const handleUpdateNote = (itemId, note) => {
+        setCart(prevCart =>
+            prevCart.map(item =>
+                item.food_id === itemId ? { ...item, note } : item
+            )
+        );
     };
 
     const handleUpdateQuantity = (itemId, newQuantity) => {
@@ -119,10 +127,11 @@ const MenuPage = () => {
                 table_id: parseInt(tableId),
                 total_price: cartTotal,
                 order_status: "pending",
+                // In the handlePlaceOrder function, update the items mapping:
                 items: cart.map(item => ({
                     food_id: String(item.food_id),
                     quantity: parseInt(item.quantity || 1),
-                    note: ""
+                    note: item.note || ''  // Include the note in the order payload
                 }))
             };
             
@@ -269,30 +278,42 @@ const MenuPage = () => {
                         <ListGroup variant="flush">
                             {cart.map(item => (
                                 <ListGroup.Item key={item.food_id}>
-                                    <div className="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 className="mb-0">{item.name}</h6>
-                                            <small className="text-muted">
-                                                {formatPrice(item.price)} × {item.quantity}
-                                            </small>
+                                    <div className="d-flex flex-column">
+                                        <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h6 className="mb-0">{item.name}</h6>
+                                                <small className="text-muted">
+                                                    {formatPrice(item.price)} × {item.quantity}
+                                                </small>
+                                            </div>
+                                            <div className="d-flex align-items-center">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline-secondary"
+                                                    onClick={() => handleUpdateQuantity(item.food_id, item.quantity - 1)}
+                                                >
+                                                    -
+                                                </Button>
+                                                <span className="mx-2">{item.quantity}</span>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline-secondary"
+                                                    onClick={() => handleUpdateQuantity(item.food_id, item.quantity + 1)}
+                                                >
+                                                    +
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <div className="d-flex align-items-center">
-                                            <Button
-                                                size="sm"
-                                                variant="outline-secondary"
-                                                onClick={() => handleUpdateQuantity(item.food_id, item.quantity - 1)}
-                                            >
-                                                -
-                                            </Button>
-                                            <span className="mx-2">{item.quantity}</span>
-                                            <Button
-                                                size="sm"
-                                                variant="outline-secondary"
-                                                onClick={() => handleUpdateQuantity(item.food_id, item.quantity + 1)}
-                                            >
-                                                +
-                                            </Button>
-                                        </div>
+                                        <Form.Group>
+                                            <Form.Control
+                                                as="textarea"
+                                                rows={2}
+                                                placeholder="Thêm ghi chú cho món ăn..."
+                                                value={item.note || ''}
+                                                onChange={(e) => handleUpdateNote(item.food_id, e.target.value)}
+                                                className="mt-2"
+                                            />
+                                        </Form.Group>
                                     </div>
                                 </ListGroup.Item>
                             ))}
@@ -325,4 +346,4 @@ const MenuPage = () => {
     );
 };
 
-export default MenuPage; 
+export default MenuPage;
