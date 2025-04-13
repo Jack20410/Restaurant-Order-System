@@ -36,8 +36,16 @@ class Payment(Base):
     __tablename__ = "payments"
     payment_id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.order_id"))
+    table_id = Column(Integer, ForeignKey("tables.table_id"))
+    waiter_id = Column(String(50))
     amount = Column(Float)
     payment_type = Column(Enum('cash', 'card', 'e-wallet'))
     created_at = Column(DateTime, default=datetime.utcnow)
+    customer_name = Column(String(100))
+    customer_age = Column(Integer)
+    customer_number = Column(String(15))
+    has_membership = Column(Integer, default=0)  # 0: No, 1: Yes
+    membership_id = Column(String(50), nullable=True)
     
     order = relationship("Order", back_populates="payment")
+    table = relationship("Table")

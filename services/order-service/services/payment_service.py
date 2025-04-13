@@ -10,15 +10,27 @@ def create_payment(payment_data: dict):
     try:
         cursor = connection.cursor()
         query = """
-        INSERT INTO payments (order_id, amount, payment_type, created_at)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO payments (
+            order_id, table_id, waiter_id, amount, 
+            payment_type, created_at, customer_name, 
+            customer_age, customer_number, has_membership, 
+            membership_id
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         values = (
-        payment_data["order_id"],
-        payment_data["amount"],
-        payment_data["payment_type"],  # New field
-        datetime.now()
-    )
+            payment_data["order_id"],
+            payment_data["table_id"],
+            payment_data["waiter_id"],
+            payment_data["amount"],
+            payment_data["payment_type"],
+            datetime.now(),
+            payment_data.get("customer_name"),
+            payment_data.get("customer_age"),
+            payment_data.get("customer_number"),
+            payment_data.get("has_membership", 0),
+            payment_data.get("membership_id")
+        )
         cursor.execute(query, values)
         connection.commit()
         payment_id = cursor.lastrowid
