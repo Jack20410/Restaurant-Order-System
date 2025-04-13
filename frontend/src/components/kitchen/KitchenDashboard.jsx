@@ -263,6 +263,7 @@ const KitchenDashboard = () => {
                                     orders={orders}
                                     onStatusUpdate={handleOrderStatusUpdate}
                                     newOrderId={newOrderId}
+                                    menuItems={menuItems}
                                 />
                             </Card.Body>
                         </Card>

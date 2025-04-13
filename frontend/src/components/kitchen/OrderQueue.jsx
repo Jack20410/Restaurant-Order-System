@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Badge, Button, ListGroup } from 'react-bootstrap';
 
-const OrderQueue = ({ orders, onStatusUpdate, newOrderId }) => {
+const OrderQueue = ({ orders, onStatusUpdate, newOrderId, menuItems = [] }) => {
     // Debug log orders
     console.log('Orders in OrderQueue:', orders);
     
@@ -16,6 +16,17 @@ const OrderQueue = ({ orders, onStatusUpdate, newOrderId }) => {
             case 'completed': return 'secondary';  // Added 'completed' status
             default: return 'primary';
         }
+    };
+
+    // Function to get food name from food_id using the menuItems
+    const getFoodNameById = (food_id) => {
+        if (!menuItems || menuItems.length === 0) return `Item #${food_id}`;
+        
+        const menuItem = menuItems.find(item => 
+            item.food_id === food_id || item.id === food_id
+        );
+        
+        return menuItem ? menuItem.name : `Item #${food_id}`;
     };
 
     // Handle empty orders array
@@ -60,7 +71,7 @@ const OrderQueue = ({ orders, onStatusUpdate, newOrderId }) => {
                             <ListGroup>
                                 {order.items && order.items.map((item, index) => (
                                     <ListGroup.Item key={`${order.order_id}-item-${index}`}>
-                                        {item.name || `Item #${item.food_id}`} x {item.quantity} {/* Cần hiển thị tên thay vì food_id */}
+                                        {item.name || getFoodNameById(item.food_id)} x {item.quantity}
                                         {(item.notes || item.note) && (
                                             <small className="text-muted d-block">
                                                 Note: {item.notes || item.note}
