@@ -8,7 +8,7 @@ const MenuManagement = ({ menuItems, onAvailabilityUpdate }) => {
                 <h4>Menu Management</h4>
             </Card.Header>
             <Card.Body>
-                <ListGroup>
+                <ListGroup style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
                     {menuItems.map(item => (
                         <ListGroup.Item key={item.food_id}>
                             <div className="d-flex justify-content-between align-items-center">

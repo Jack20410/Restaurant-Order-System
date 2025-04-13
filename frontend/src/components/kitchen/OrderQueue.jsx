@@ -60,7 +60,7 @@ const OrderQueue = ({ orders, onStatusUpdate, newOrderId }) => {
                             <ListGroup>
                                 {order.items && order.items.map((item, index) => (
                                     <ListGroup.Item key={`${order.order_id}-item-${index}`}>
-                                        {item.name || `Item #${item.food_id}`} x {item.quantity}
+                                        {item.name || `Item #${item.food_id}`} x {item.quantity} {/* Cần hiển thị tên thay vì food_id */}
                                         {(item.notes || item.note) && (
                                             <small className="text-muted d-block">
                                                 Note: {item.notes || item.note}
