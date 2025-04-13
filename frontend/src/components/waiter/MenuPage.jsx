@@ -221,7 +221,7 @@ const MenuPage = () => {
                                     <Card.Img 
                                         variant="top" 
                                         src={item.image} 
-                                        style={{ height: '200px', objectFit: 'cover' }}
+                                        style={{ height: '400px', objectFit: 'cover' }}
                                     />
                                     <Card.Body className="d-flex flex-column">
                                         <Card.Title>{item.name}</Card.Title>
