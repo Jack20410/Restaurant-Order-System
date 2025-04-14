@@ -12,6 +12,7 @@ const KitchenDashboard = () => {
     const [menuItems, setMenuItems] = useState([]);
     const [flashMessage, setFlashMessage] = useState(null);
     const [newOrderId, setNewOrderId] = useState(null);
+    const [completedOrderIds, setCompletedOrderIds] = useState(new Set());
     const navigate = useNavigate();
 
     const fetchOrders = async () => {
@@ -27,7 +28,12 @@ const KitchenDashboard = () => {
                     }
                 });
                 console.log('Orders from kitchen API:', response.data);
-                setOrders(response.data);
+                
+                // Filter out orders that are marked to be hidden
+                const filteredOrders = response.data.filter(
+                    order => !completedOrderIds.has(order.order_id)
+                );
+                setOrders(filteredOrders);
             } catch (kitchenError) {
                 console.error('Error fetching from kitchen API:', kitchenError);
                 
@@ -39,7 +45,12 @@ const KitchenDashboard = () => {
                     }
                 });
                 console.log('Orders from order service API:', fallbackResponse.data);
-                setOrders(fallbackResponse.data);
+                
+                // Filter out orders that are marked to be hidden
+                const filteredOrders = fallbackResponse.data.filter(
+                    order => !completedOrderIds.has(order.order_id)
+                );
+                setOrders(filteredOrders);
             }
         } catch (error) {
             console.error('Failed to fetch orders:', error);
@@ -105,6 +116,39 @@ const KitchenDashboard = () => {
             // Handle order status updates
             else if (update.orderId || update.order_id) {
                 const orderId = update.orderId || update.order_id;
+                const status = update.status || update.order_status;
+                
+                // If the order is already marked as completed, ignore the update
+                if (completedOrderIds.has(orderId)) {
+                    return;
+                }
+                
+                // If status is now 'completed', schedule it to be hidden after 5 seconds
+                if (status === 'completed') {
+                    setFlashMessage({
+                        text: `Order #${orderId} is completed !`,
+                        type: 'success'
+                    });
+                    
+                    // Schedule the order to be hidden after 5 seconds
+                    setTimeout(() => {
+                        setCompletedOrderIds(prev => {
+                            const newSet = new Set(prev);
+                            newSet.add(orderId);
+                            return newSet;
+                        });
+                        
+                        // Remove the flash message
+                        setFlashMessage(prev => 
+                            prev?.text.includes(`Order #${orderId}`) ? null : prev
+                        );
+                        
+                        // Filter out the completed order
+                        setOrders(prevOrders => 
+                            prevOrders.filter(order => order.order_id !== orderId)
+                        );
+                    }, 5000);
+                }
                 
                 setOrders(prevOrders => {
                     const orderIndex = prevOrders.findIndex(o => o.order_id === orderId);
@@ -113,7 +157,10 @@ const KitchenDashboard = () => {
                         newOrders[orderIndex] = { 
                             ...newOrders[orderIndex], 
                             order_status: update.status,
-                            ...update 
+                            ...update,
+                            // Preserve the creation timestamp
+                            created_at: newOrders[orderIndex].created_at || 
+                                        newOrders[orderIndex].createdAt
                         };
                         return newOrders;
                     }
@@ -176,6 +223,34 @@ const KitchenDashboard = () => {
                         : order
                 )
             );
+            
+            // If order is completed, schedule it to be hidden after 5 seconds
+            if (status === 'completed') {
+                // Show a flash message
+                setFlashMessage({
+                    text: `Order #${orderId} marked as completed. It will be hidden in 5 seconds.`,
+                    type: 'success'
+                });
+                
+                // Schedule the order to be hidden after 5 seconds
+                setTimeout(() => {
+                    setCompletedOrderIds(prev => {
+                        const newSet = new Set(prev);
+                        newSet.add(orderId);
+                        return newSet;
+                    });
+                    
+                    // Remove the corresponding flash message if it's still showing
+                    setFlashMessage(prev => 
+                        prev?.text.includes(`Order #${orderId}`) ? null : prev
+                    );
+                    
+                    // Also filter the orders list to remove the completed order
+                    setOrders(prevOrders => 
+                        prevOrders.filter(order => order.order_id !== orderId)
+                    );
+                }, 5000);
+            }
             
             console.log(`Order ${orderId} status updated to ${status}`);
         } catch (error) {
@@ -254,11 +329,11 @@ const KitchenDashboard = () => {
                 )}
                 <Row>
                     <Col md={8}>
-                        <Card className="mb-3">
-                            <Card.Header>
+                        <Card className="mb-3" style={{ height: 'calc(100vh - 150px)' }}>
+                            <Card.Header className="bg-success text-white">
                                 <h4>Order Queue</h4>
                             </Card.Header>
-                            <Card.Body>
+                            <Card.Body style={{ padding: '10px', overflowY: 'hidden' }}>
                                 <OrderQueue 
                                     orders={orders}
                                     onStatusUpdate={handleOrderStatusUpdate}

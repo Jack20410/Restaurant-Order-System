@@ -82,11 +82,12 @@ const WaiterDashboard = () => {
                     id: order.order_id,
                     table_number: order.table_id,
                     status: order.order_status,
+                    created_at: order.created_at, // Include the creation timestamp for sorting
                     items: order.items.map(item => ({
                         id: item.food_id,
-                        name: item.food_id, // You might want to fetch food names from menu items
+                        food_id: item.food_id,
                         quantity: item.quantity,
-                        price: 0 // You might want to fetch prices from menu items
+                        price: 0 // Prices will be fetched from menu items
                     })),
                     total: order.total_price
                 })) : [];
@@ -320,7 +321,12 @@ const WaiterDashboard = () => {
                 const orderIndex = prevOrders.findIndex(o => o.id === update.orderId);
                 if (orderIndex >= 0) {
                     const newOrders = [...prevOrders];
-                    newOrders[orderIndex] = { ...newOrders[orderIndex], ...update };
+                    // Preserve the created_at timestamp when updating
+                    newOrders[orderIndex] = { 
+                        ...newOrders[orderIndex], 
+                        ...update,
+                        created_at: newOrders[orderIndex].created_at // Keep the original timestamp
+                    };
                     return newOrders;
                 }
                 return prevOrders;
@@ -376,14 +382,15 @@ const WaiterDashboard = () => {
                         </Card>
                     </Col>
                     <Col md={4}>
-                        <Card>
-                            <Card.Header className="bg-primary text-white">
+                        <Card style={{ height: 'calc(100vh - 150px)' }}>
+                            <Card.Header className="bg-success text-white">
                                 <h4 className="mb-0">Active Orders</h4>
                             </Card.Header>
-                            <Card.Body>
+                            <Card.Body style={{ padding: '10px', overflowY: 'hidden' }}>
                                 <ActiveOrders 
                                     orders={activeOrders}
                                     onOrderUpdate={handleOrderComplete}
+                                    menuItems={menuItems}
                                 />
                             </Card.Body>
                         </Card>

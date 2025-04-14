@@ -1,6 +1,29 @@
 import React from 'react';
 import { Card, Badge, Button, ListGroup } from 'react-bootstrap';
 
+const scrollableStyle = {
+    maxHeight: 'calc(100vh - 200px)',
+    overflowY: 'auto',
+    paddingRight: '5px',
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#6c757d #f8f9fa',
+    // For WebKit browsers (Chrome, Safari)
+    WebkitScrollbarWidth: 'thin',
+    WebkitScrollbarTrack: {
+        background: '#f8f9fa',
+    },
+    WebkitScrollbarThumb: {
+        background: '#6c757d',
+        borderRadius: '4px',
+    }
+};
+
+// Keyframes for fade-out animation
+const fadeOutStyle = {
+    animation: 'fadeOut 5s',
+    opacity: 0.7
+};
+
 const OrderQueue = ({ orders, onStatusUpdate, newOrderId, menuItems = [] }) => {
     // Debug log orders
     console.log('Orders in OrderQueue:', orders);
@@ -38,10 +61,20 @@ const OrderQueue = ({ orders, onStatusUpdate, newOrderId, menuItems = [] }) => {
             </div>
         );
     }
+    
+    // Sort orders: oldest first (by creation time)
+    const sortedOrders = [...orders].sort((a, b) => {
+        // If created_at doesn't exist, use current time
+        const dateA = new Date(a.created_at || a.createdAt || Date.now());
+        const dateB = new Date(b.created_at || b.createdAt || Date.now());
+        
+        // Sort ascending - oldest date (smaller value) first
+        return dateA - dateB; 
+    });
 
     return (
-        <div className="order-queue">
-            {orders.map(order => {
+        <div className="order-queue" style={scrollableStyle}>
+            {sortedOrders.map(order => {
                 // Extract order status - handle different field names
                 const orderStatus = order.status || order.order_status || 'pending';
                 
@@ -51,7 +84,7 @@ const OrderQueue = ({ orders, onStatusUpdate, newOrderId, menuItems = [] }) => {
                 return (
                     <Card 
                         key={order.order_id} 
-                        className={`mb-3 ${isNewOrder ? 'new-order-highlight' : ''}`}
+                        className={`mb-3 ${isNewOrder ? 'new-order-highlight' : ''} ${orderStatus === 'completed' ? 'fade-out' : ''}`}
                         style={isNewOrder ? {
                             borderColor: '#28a745',
                             boxShadow: '0 0 10px rgba(40, 167, 69, 0.5)',
@@ -60,7 +93,14 @@ const OrderQueue = ({ orders, onStatusUpdate, newOrderId, menuItems = [] }) => {
                     >
                         <Card.Header style={isNewOrder ? { backgroundColor: '#d4edda' } : {}}>
                             <div className="d-flex justify-content-between align-items-center">
-                                <h5>Table {order.tableId || order.table_id}</h5>
+                                <div>
+                                    <h5 className="mb-0">Table {order.tableId || order.table_id}</h5>
+                                    {(order.created_at || order.createdAt) && 
+                                        <small className="text-muted">
+                                            {new Date(order.created_at || order.createdAt).toLocaleString()}
+                                        </small>
+                                    }
+                                </div>
                                 <Badge bg={getStatusColor(orderStatus)}>
                                     {orderStatus}
                                 </Badge>
@@ -80,31 +120,26 @@ const OrderQueue = ({ orders, onStatusUpdate, newOrderId, menuItems = [] }) => {
                                     </ListGroup.Item>
                                 ))}
                             </ListGroup>
-                            <div className="mt-3">
-                                {orderStatus === 'pending' && (
-                                    <Button 
-                                        variant="primary"
-                                        onClick={() => onStatusUpdate(order.order_id, 'preparing')}
-                                    >
-                                        Start Preparing
-                                    </Button>
-                                )}
-                                {orderStatus === 'preparing' && (
-                                    <Button 
-                                        variant="success"
-                                        onClick={() => onStatusUpdate(order.order_id, 'ready_to_serve')}
-                                    >
-                                        Mark as Ready
-                                    </Button>
-                                )}
-                                {orderStatus === 'ready_to_serve' && (
-                                    <Button 
-                                        variant="secondary"
-                                        onClick={() => onStatusUpdate(order.order_id, 'completed')}
-                                    >
-                                        Mark as Served
-                                    </Button>
-                                )}
+                            <div className="mt-3 d-flex justify-content-between align-items-center">
+                                <small className="text-muted">Order #{order.order_id}</small>
+                                <div>
+                                    {orderStatus === 'pending' && (
+                                        <Button 
+                                            variant="primary"
+                                            onClick={() => onStatusUpdate(order.order_id, 'preparing')}
+                                        >
+                                            Start Preparing
+                                        </Button>
+                                    )}
+                                    {orderStatus === 'preparing' && (
+                                        <Button 
+                                            variant="success"
+                                            onClick={() => onStatusUpdate(order.order_id, 'ready_to_serve')}
+                                        >
+                                            Mark as Ready
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </Card.Body>
                     </Card>

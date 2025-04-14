@@ -45,4 +45,32 @@
 
 .badge-served {
   background-color: #6c757d;
+}
+
+/* Animation for new order highlight */
+@keyframes flashAnimation {
+    from {
+        box-shadow: 0 0 2px rgba(40, 167, 69, 0.5);
+    }
+    to {
+        box-shadow: 0 0 15px rgba(40, 167, 69, 0.9);
+    }
+}
+
+/* Animation for fade-out effect */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.5;
+    }
+}
+
+.new-order-highlight {
+    animation: flashAnimation 1s infinite alternate;
+}
+
+.fade-out {
+    animation: fadeOut 5s forwards;
 } 

@@ -4,7 +4,7 @@ import { Card, Form, ListGroup } from 'react-bootstrap';
 const MenuManagement = ({ menuItems, onAvailabilityUpdate }) => {
     return (
         <Card>
-            <Card.Header>
+            <Card.Header className="bg-warning text-black">
                 <h4>Menu Management</h4>
             </Card.Header>
             <Card.Body>
