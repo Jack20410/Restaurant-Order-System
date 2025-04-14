@@ -1,4 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import get_db
+from models import User
+
+
 from routers import users, auth
 import database
 import uvicorn
@@ -55,5 +60,6 @@ def health_check():
         status["warning"] = "Database connection is not available"
     return status
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8001, reload=True)
+
+
+
