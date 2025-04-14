@@ -74,6 +74,11 @@ export const socketService = {
     subscribeToMenuUpdates: (callback) => {
         socket.on('menu_update', callback);
     },
+
+    // Unsubscribe from menu updates
+    unsubscribeFromMenuUpdates: () => {
+        socket.off('menu_update');
+    },
     
     // Emit order update
     emitOrderUpdate: (orderData) => {
@@ -110,7 +115,7 @@ export const socketService = {
             console.warn('Socket not connected. Attempting to reconnect...');
             socket.connect();
         }
-        socket.emit('update_menu', menuItem);
+        socket.emit('menu_update', menuItem);
     },
     
     // Send order to kitchen

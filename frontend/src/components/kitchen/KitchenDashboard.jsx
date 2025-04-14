@@ -169,13 +169,26 @@ const KitchenDashboard = () => {
             }
         });
         
+        // Subscribe to menu updates
+        socketService.subscribeToMenuUpdates((update) => {
+            console.log('Received menu update:', update);
+            setMenuItems(prevItems => 
+                prevItems.map(item => 
+                    item.food_id === update.food_id 
+                        ? { ...item, availability: update.availability } 
+                        : item
+                )
+            );
+        });
+        
         // Fetch initial data
         fetchOrders();
         fetchMenu();
 
-        // Cleanup socket subscription
+        // Cleanup socket subscriptions
         return () => {
             socketService.unsubscribeFromOrders();
+            socketService.unsubscribeFromMenuUpdates();
         };
     }, []);
 
@@ -264,7 +277,7 @@ const KitchenDashboard = () => {
     const handleMenuItemUpdate = async (itemId, availability) => {
         try {
             const token = sessionStorage.getItem('token');
-            await axios.patch(`/api/kitchen/menu/${itemId}`, 
+            const response = await axios.patch(`/api/kitchen/menu/${itemId}/availability`, 
                 { availability },
                 {
                     headers: {
@@ -272,12 +285,36 @@ const KitchenDashboard = () => {
                     }
                 }
             );
-            socketService.emitMenuUpdate({ itemId, availability });
+
+            // Update local menu items state
+            setMenuItems(prevItems => 
+                prevItems.map(item => 
+                    item.food_id === itemId 
+                        ? { ...item, availability } 
+                        : item
+                )
+            );
+
+            // Emit menu update through WebSocket
+            socketService.emitMenuUpdate({ 
+                food_id: itemId, 
+                availability 
+            });
+
+            // Show success message
+            setFlashMessage({
+                text: `Menu item availability updated successfully`,
+                type: 'success'
+            });
+
+            // Auto-dismiss flash message after 3 seconds
+            setTimeout(() => {
+                setFlashMessage(null);
+            }, 3000);
+
         } catch (error) {
             console.error('Failed to update menu item:', error);
-            if (error.response?.status === 401) {
-                handleLogout();
-            }
+            throw new Error(error.response?.data?.detail || 'Failed to update menu item availability');
         }
     };
 
