@@ -21,7 +21,7 @@ services:
       context: ./services/user-service
       dockerfile: Dockerfile
     ports:
-      - "8001:8000"
+      - "8001:8000"  # External:Internal
     environment:
       - DATABASE_URL=mysql+pymysql://user:password@user-db:3306/user_db
       - JWT_SECRET=your-secret-key
@@ -36,9 +36,11 @@ services:
       context: ./services/order-service
       dockerfile: Dockerfile
     ports:
-      - "8002:8000"
+      - "8002:8000"  # External:Internal
     environment:
       - DATABASE_URL=mysql+pymysql://user:password@order-db:3306/order_db
+      - USER_SERVICE_URL=http://user-service:8000
+      - KITCHEN_SERVICE_URL=http://kitchen-service:8000
     depends_on:
       order-db:
         condition: service_healthy
@@ -50,7 +52,7 @@ services:
       context: ./services/kitchen-service
       dockerfile: Dockerfile
     ports:
-      - "8003:8000"
+      - "8003:8000"  # External:Internal
     environment:
       - MONGODB_URL=mongodb+srv://duclinhhopham:duclinh2503@projectsoa.4nvx0yg.mongodb.net/?retryWrites=true&w=majority&appName=ProjectSOA
       - DB_NAME=KitchenServices

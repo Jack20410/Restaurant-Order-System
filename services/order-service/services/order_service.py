@@ -5,7 +5,7 @@ import json
 
 from datetime import datetime
 from database_orders import get_db_connection
-from models import Order, OrderItem, Table
+from models import Order, OrderItem, Table, OrderCompleted, CompletedOrderMapping
 from sqlalchemy.orm import Session
 from typing import Dict, Any
 
@@ -271,6 +271,80 @@ def get_active_orders():
             
         return result
     except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+def migrate_to_completed_order(order_id: int, payment_data: dict):
+    """
+    Migrate an order to completed_orders table with payment information
+    If payment_data contains combined_orders, it will combine multiple orders into one completed order
+    """
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        # Get the main order
+        order = session.query(Order).filter(Order.order_id == order_id).first()
+        if not order:
+            raise Exception(f"Order {order_id} not found")
+
+        # Create completed order
+        completed_order = OrderCompleted(
+            employee_id=order.employee_id,
+            customer_name=payment_data["customer_name"],
+            customer_phone=payment_data["customer_phone"],
+            table_id=order.table_id,
+            total_price=payment_data["amount_paid"],
+            completed_at=datetime.now()
+        )
+        session.add(completed_order)
+        session.flush()  # Get the ID without committing
+
+        # Get all order IDs that are being combined
+        order_ids = payment_data.get("combined_orders", [order_id])
+        
+        # Create mappings for all original orders
+        for original_order_id in order_ids:
+            mapping = CompletedOrderMapping(
+                completed_order_id=completed_order.order_completed_id,
+                original_order_id=original_order_id
+            )
+            session.add(mapping)
+
+        # If this is a combined order, get items from all orders
+        if "combined_orders" in payment_data:
+            all_orders = session.query(Order).filter(
+                Order.order_id.in_(payment_data["combined_orders"])
+            ).all()
+            
+            # Copy items from all orders
+            for source_order in all_orders:
+                for item in source_order.items:
+                    # Create new order item linked to completed order
+                    completed_item = OrderItem(
+                        order_id=completed_order.order_completed_id,
+                        food_id=item.food_id,
+                        quantity=item.quantity,
+                        note=item.note
+                    )
+                    session.add(completed_item)
+        else:
+            # Copy items from single order
+            for item in order.items:
+                completed_item = OrderItem(
+                    order_id=completed_order.order_completed_id,
+                    food_id=item.food_id,
+                    quantity=item.quantity,
+                    note=item.note
+                )
+                session.add(completed_item)
+
+        session.commit()
+        return completed_order.order_completed_id
+    except Exception as e:
+        session.rollback()
         raise e
     finally:
         session.close()

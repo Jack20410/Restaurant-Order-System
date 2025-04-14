@@ -41,12 +41,16 @@ def test_connection():
 def init_db():
     try:
         # Import models here to avoid circular imports
-        from models import Order, Payment, Table, OrderItem
+        from models import Order, Payment, Table, OrderItem, OrderCompleted
         
         # First check if we can connect to the database
         connection = engine.connect()
         connection.close()
         print("✅ Successfully connected to the database!")
+        
+        # Drop all tables first to ensure clean state
+        Base.metadata.drop_all(bind=engine)
+        print("Dropped all existing tables")
         
         # Then create tables
         print("Creating database tables...")
@@ -63,6 +67,23 @@ def init_db():
             
             if set(tables) == set(existing_tables):
                 print("✅ All tables created successfully!")
+                
+                # Create initial tables
+                session = SessionLocal()
+                try:
+                    print("Creating initial tables...")
+                    # Create 10 tables
+                    for i in range(1, 11):
+                        new_table = Table(table_id=i, table_status='available')
+                        session.add(new_table)
+                    session.commit()
+                    print("✅ Initial tables created successfully!")
+                except Exception as e:
+                    session.rollback()
+                    print(f"❌ Failed to create initial tables: {str(e)}")
+                    raise e
+                finally:
+                    session.close()
             else:
                 missing = set(tables) - set(existing_tables)
                 if missing:

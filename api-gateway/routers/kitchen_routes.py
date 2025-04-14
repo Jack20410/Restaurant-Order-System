@@ -86,6 +86,19 @@ async def update_food_availability(food_id: str, data: Dict[str, bool], authoriz
     
     return response
 
+@router.get("/menu/{food_id}")
+async def get_menu_item(food_id: str):
+    """Get menu item by ID route forwarded to kitchen service"""
+    response, status_code = await forward_request(
+        path=f"/menu/{food_id}", 
+        method="GET"
+    )
+    
+    if status_code >= 400:
+        raise HTTPException(status_code=status_code, detail=response)
+    
+    return response
+
 #<------------------------Kitchen order routes------------------------>
 @router.get("/orders")
 async def get_kitchen_orders(authorization: str = Header(...)):

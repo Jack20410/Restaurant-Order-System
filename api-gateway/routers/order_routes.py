@@ -237,14 +237,100 @@ async def reserve_table(table_id: int, authorization: str = Header(...)):
     )
     return response
 
+# <------------------------Payment endpoints------------------------>
 @router.post("/payments")
 async def process_payment(payment_data: Dict[str, Any], authorization: str = Header(...)):
-    """Process payment"""
+    """Process payment for a customer and return receipt"""
     headers = {"Authorization": authorization}
-    response, status_code = await forward_request(
-        path="/orders/payments",
-        method="POST",
-        data=payment_data,
-        headers=headers
-    )
-    return response
+    try:
+        # Validate required fields
+        if "table_id" not in payment_data:
+            raise HTTPException(status_code=400, detail="Table ID is required")
+        if "phone_number" not in payment_data:
+            raise HTTPException(status_code=400, detail="Customer phone number is required")
+
+        # Process payment
+        payment_response, status_code = await forward_request(
+            path="/payments/",
+            method="POST",
+            data=payment_data,
+            headers=headers
+        )
+        
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=payment_response)
+
+        # Get receipt for the payment
+        receipt_response, status_code = await forward_request(
+            path=f"/payments/receipt/{payment_response['payment_id']}",
+            method="GET",
+            headers=headers
+        )
+
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=receipt_response)
+
+        return {
+            "payment": payment_response,
+            "receipt": receipt_response
+        }
+            
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/payments/customer/{phone_number}")
+async def get_customer_payments(phone_number: str, authorization: str = Header(...)):
+    """Get payment history and receipts for a specific customer"""
+    headers = {"Authorization": authorization}
+    try:
+        # Get payment history
+        payments_response, status_code = await forward_request(
+            path=f"/payments/customer/{phone_number}",
+            method="GET",
+            headers=headers
+        )
+        
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=payments_response)
+
+        # Get receipts
+        receipts_response, status_code = await forward_request(
+            path=f"/receipt/phone/{phone_number}",
+            method="GET",
+            headers=headers
+        )
+
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=receipts_response)
+
+        return {
+            "payments": payments_response,
+            "receipts": receipts_response
+        }
+            
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/payments/history")
+async def get_paid_orders_history(authorization: str = Header(...)):
+    """Get all paid orders history"""
+    headers = {"Authorization": authorization}
+    try:
+        response, status_code = await forward_request(
+            path="/payments/history",
+            method="GET",
+            headers=headers
+        )
+        
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=response)
+            
+        return response
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

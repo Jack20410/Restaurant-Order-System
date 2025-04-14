@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import ManagerDashboard from './components/manager/ManagerDashboard';
-import WaiterDashboard from './components/waiter/waiterDashboard';
+import WaiterDashboard from './components/waiter/WaiterDashboard';
 import MenuPage from './components/waiter/MenuPage';
 import KitchenDashboard from './components/kitchen/KitchenDashboard';
 import 'bootstrap/dist/css/bootstrap.min.css';
