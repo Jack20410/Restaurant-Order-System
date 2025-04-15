@@ -37,6 +37,13 @@ def test_connection():
         print(f"❌ Failed to connect to the database: {str(e)}")
         return False
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 if __name__ == "__main__":
     if test_connection():
         init_db()

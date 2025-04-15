@@ -34,9 +34,7 @@ class OrderCompleted(Base):
     completed_at = Column(DateTime, default=datetime.utcnow)
 
     table = relationship("Table")
-    items = relationship("OrderItem", 
-                        primaryjoin="OrderCompleted.order_completed_id==OrderItem.order_id",
-                        foreign_keys="OrderItem.order_id")
+    items = relationship("CompletedOrderItem", back_populates="order_completed")
     payment = relationship("Payment", back_populates="order_completed")
     original_orders = relationship("CompletedOrderMapping", back_populates="completed_order")
 
@@ -47,6 +45,16 @@ class CompletedOrderMapping(Base):
     original_order_id = Column(Integer)
     
     completed_order = relationship("OrderCompleted", back_populates="original_orders")
+
+class CompletedOrderItem(Base):
+    __tablename__ = "completed_order_items"
+    completed_order_item_id = Column(Integer, primary_key=True, index=True)
+    order_completed_id = Column(Integer, ForeignKey("orders_completed.order_completed_id"))
+    food_id = Column(String(10))
+    quantity = Column(Integer)
+    note = Column(Text)
+    
+    order_completed = relationship("OrderCompleted", back_populates="items")
 
 class OrderItem(Base):
     __tablename__ = "order_items"

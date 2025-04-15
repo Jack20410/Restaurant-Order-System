@@ -5,7 +5,7 @@ import json
 
 from datetime import datetime
 from database_orders import get_db_connection
-from models import Order, OrderItem, Table, OrderCompleted, CompletedOrderMapping
+from models import Order, OrderItem, Table, OrderCompleted, CompletedOrderMapping, CompletedOrderItem
 from sqlalchemy.orm import Session
 from typing import Dict, Any
 
@@ -322,9 +322,9 @@ def migrate_to_completed_order(order_id: int, payment_data: dict):
             # Copy items from all orders
             for source_order in all_orders:
                 for item in source_order.items:
-                    # Create new order item linked to completed order
-                    completed_item = OrderItem(
-                        order_id=completed_order.order_completed_id,
+                    # Create new completed order item
+                    completed_item = CompletedOrderItem(
+                        order_completed_id=completed_order.order_completed_id,
                         food_id=item.food_id,
                         quantity=item.quantity,
                         note=item.note
@@ -333,8 +333,8 @@ def migrate_to_completed_order(order_id: int, payment_data: dict):
         else:
             # Copy items from single order
             for item in order.items:
-                completed_item = OrderItem(
-                    order_id=completed_order.order_completed_id,
+                completed_item = CompletedOrderItem(
+                    order_completed_id=completed_order.order_completed_id,
                     food_id=item.food_id,
                     quantity=item.quantity,
                     note=item.note
