@@ -9,6 +9,18 @@ router = APIRouter()
 # Order service URL from environment variable or default
 ORDER_SERVICE_URL = os.getenv("ORDER_SERVICE_URL", "http://order-service:8002")
 
+@router.get("/", response_model=List[Dict[str, Any]])
+async def get_all_kitchen_orders():
+    """
+    Proxy endpoint to get all orders from order service
+    """
+    try:
+        response = requests.get(f"{ORDER_SERVICE_URL}/api/orders/active")
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        raise HTTPException(status_code=503, detail=f"Order service unavailable: {str(e)}")
+
 @router.post("/", response_model=Dict[str, Any])
 async def create_kitchen_order(order: Dict[str, Any]):
     """
@@ -63,17 +75,6 @@ async def mark_items_served(order_id: str, update_data: Dict[str, Any]):
     except requests.RequestException as e:
         raise HTTPException(status_code=503, detail=f"Order service unavailable: {str(e)}")
 
-@router.get("/", response_model=List[Dict[str, Any]])
-async def get_all_kitchen_orders():
-    """
-    Proxy endpoint to get all orders from order service
-    """
-    try:
-        response = requests.get(f"{ORDER_SERVICE_URL}/api/orders/active")
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        raise HTTPException(status_code=503, detail=f"Order service unavailable: {str(e)}")
 
 @router.get("/ready-to-serve", response_model=List[Dict[str, Any]])
 async def get_ready_to_serve_orders():
