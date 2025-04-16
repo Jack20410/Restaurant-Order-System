@@ -16,6 +16,39 @@ const WaiterDashboard = () => {
     const [menuItems, setMenuItems] = useState([]);
     const userName = sessionStorage.getItem('userName') || 'Waiter';
 
+    useEffect(() => {
+        // Initial data fetch
+        fetchTables();
+        fetchActiveOrders();
+        fetchMenuItems();
+
+        // Subscribe to real-time updates
+        socketService.subscribeToOrders(handleOrderUpdate);
+        socketService.subscribeToTableUpdates(handleTableUpdate);
+
+        // Cleanup subscriptions
+        return () => {
+            socketService.unsubscribeFromOrders();
+            socketService.unsubscribeFromTableUpdates();
+        };
+    }, []);
+
+    const handleOrderUpdate = (data) => {
+        console.log('Received order update:', data);
+        if (data.type === 'new_order' || data.status) {
+            fetchActiveOrders();
+        }
+    };
+
+    const handleTableUpdate = (data) => {
+        console.log('Received table update:', data);
+        setTables(prevTables =>
+            prevTables.map(table =>
+                table.id === data.table_id ? { ...table, status: data.status } : table
+            )
+        );
+    };
+
     const handleLogout = () => {
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('userRole');
@@ -39,24 +72,18 @@ const WaiterDashboard = () => {
             });
 
             if (response.data) {
-                // Transform the data to match our component's needs
                 const formattedTables = Array.isArray(response.data) ? response.data : 
                     Array.isArray(response.data.tables) ? response.data.tables : [];
                 
                 const tables = formattedTables.map((table, index) => ({
                     id: table.table_id,
-                    number: index + 1,  // Use index + 1 for table numbers
+                    number: index + 1,
                     status: table.table_status
                 }));
                 setTables(tables);
             }
         } catch (error) {
             console.error('Error fetching tables:', error);
-            if (error.response) {
-                console.error('Error status:', error.response.status);
-                console.error('Error data:', error.response.data);
-                console.error('Error headers:', error.response.headers);
-            }
         }
     };
 
@@ -145,6 +172,12 @@ const WaiterDashboard = () => {
                 }
             );
             if (response.data) {
+                // Emit table update via WebSocket
+                socketService.emitTableUpdate({
+                    tableId: tableId,
+                    status: response.data.table_status
+                });
+
                 setTables(prevTables =>
                     prevTables.map(table =>
                         table.id === tableId ? { ...table, status: response.data.table_status } : table
@@ -297,53 +330,6 @@ const WaiterDashboard = () => {
             alert(`Failed to update order: ${error.message}`);
         }
     };
-
-    useEffect(() => {
-        console.log('Initializing WaiterDashboard...');
-        const token = sessionStorage.getItem('token');
-        
-        if (!token) {
-            console.error('No authentication token found');
-            navigate('/');
-            return;
-        }
-        
-        // Check socket connection
-        if (!socketService.isConnected()) {
-            console.log('Socket not connected, attempting to reconnect...');
-            socketService.reconnect();
-        }
-        
-        // Subscribe to real-time updates
-        socketService.subscribeToOrders((update) => {
-            console.log('Received order update:', update);
-            setActiveOrders(prevOrders => {
-                const orderIndex = prevOrders.findIndex(o => o.id === update.orderId);
-                if (orderIndex >= 0) {
-                    const newOrders = [...prevOrders];
-                    // Preserve the created_at timestamp when updating
-                    newOrders[orderIndex] = { 
-                        ...newOrders[orderIndex], 
-                        ...update,
-                        created_at: newOrders[orderIndex].created_at // Keep the original timestamp
-                    };
-                    return newOrders;
-                }
-                return prevOrders;
-            });
-        });
-
-        // Fetch initial data
-        fetchTables();
-        fetchActiveOrders();
-        fetchMenuItems();
-
-        // Cleanup socket subscription
-        return () => {
-            console.log('Cleaning up WaiterDashboard...');
-            socketService.unsubscribeFromOrders();
-        };
-    }, [navigate]);
 
     return (
         <>

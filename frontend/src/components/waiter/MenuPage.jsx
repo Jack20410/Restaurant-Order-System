@@ -115,6 +115,9 @@ const MenuPage = () => {
             // 2. Get authentication data
             const token = sessionStorage.getItem('token');
             const userId = sessionStorage.getItem('userId');
+            const userRole = sessionStorage.getItem('userRole');
+            const previousRole = sessionStorage.getItem('previousRole');
+
             if (!token || !userId) {
                 alert('Authentication token not found. Please log in again.');
                 navigate('/login');
@@ -127,18 +130,16 @@ const MenuPage = () => {
                 table_id: parseInt(tableId),
                 total_price: cartTotal,
                 order_status: "pending",
-                // In the handlePlaceOrder function, update the items mapping:
                 items: cart.map(item => ({
                     food_id: String(item.food_id),
                     quantity: parseInt(item.quantity || 1),
-                    note: item.note || ''  // Include the note in the order payload
+                    note: item.note || ''
                 }))
             };
             
             console.log('Order payload:', JSON.stringify(orderPayload, null, 2));
             
             // 4. Place order directly to order service using REST API
-            // Use the direct service URL that has been confirmed to work
             const response = await fetch('http://localhost:8002/orders/', {
                 method: 'POST',
                 headers: {
@@ -157,7 +158,6 @@ const MenuPage = () => {
             console.log('Order placed successfully:', responseData);
             
             // 5. Emit WebSocket event to notify kitchen about the new order
-            // Even though we placed the order via REST, we can still notify other services via WebSocket
             try {
                 socketService.emitOrderUpdate({
                     type: 'new_order',
@@ -169,14 +169,19 @@ const MenuPage = () => {
                 console.log('WebSocket notification sent to kitchen');
             } catch (socketError) {
                 console.warn('Could not send WebSocket notification:', socketError.message);
-                // Continue anyway since the order was placed successfully
             }
             
-            // 6. Handle success
+            // 6. Handle success and redirect based on role
             setCart([]);
             setShowCart(false);
             alert('Order placed successfully!');
-            navigate('/waiter');
+
+            // Check if user is a manager in waiter mode
+            if (userRole === 'manager' && previousRole === 'manager') {
+                navigate('/manager-waiter');
+            } else {
+                navigate('/waiter');
+            }
             
         } catch (error) {
             console.error('Error placing order:', error);

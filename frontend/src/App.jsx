@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import ManagerDashboard from './components/manager/ManagerDashboard';
+import ManagerWaiterView from './components/manager/ManagerWaiterView';
 import WaiterDashboard from './components/waiter/WaiterDashboard';
 import MenuPage from './components/waiter/MenuPage';
 import KitchenDashboard from './components/kitchen/KitchenDashboard';
@@ -13,9 +14,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     const location = useLocation();
     const token = sessionStorage.getItem('token');
     const userRole = sessionStorage.getItem('userRole');
+    const previousRole = sessionStorage.getItem('previousRole');
 
     if (!token) {
         return <Navigate to="/" state={{ from: location }} replace />;
+    }
+
+    // Special case: Allow managers to access waiter routes if they're in waiter mode
+    if (userRole === 'manager' && previousRole === 'manager' && allowedRoles.includes('waiter')) {
+        return children;
     }
 
     if (!allowedRoles.includes(userRole)) {
@@ -74,8 +81,16 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/manager-waiter"
+                    element={
+                        <ProtectedRoute allowedRoles={['manager']}>
+                            <ManagerWaiterView />
+                        </ProtectedRoute>
+                    }
+                />
 
-                {/* Waiter routes */}
+                {/* Waiter routes - Allow both waiters and managers in waiter mode */}
                 <Route
                     path="/waiter"
                     element={
@@ -87,7 +102,7 @@ function App() {
                 <Route
                     path="/waiter/menu/:tableId"
                     element={
-                        <ProtectedRoute allowedRoles={['waiter']}>
+                        <ProtectedRoute allowedRoles={['waiter', 'manager']}>
                             <MenuPage />
                         </ProtectedRoute>
                     }

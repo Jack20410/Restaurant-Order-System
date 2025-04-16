@@ -3,11 +3,28 @@ import { Container, Row, Col, Navbar, Button, Nav, Card } from 'react-bootstrap'
 import { useNavigate, Link } from 'react-router-dom';
 import UserList from './UserList';
 import ActiveOrders from '../waiter/ActiveOrders';
-import { FaUsers, FaHome, FaChartBar, FaClipboardList, FaUtensils, FaPlusCircle } from 'react-icons/fa';
 import Dashboard from './Dashboard';
 import AddFoodForm from './AddFoodForm';
 import axios from 'axios';
 import styles from '../../styles/ManagerDashboard.module.css'; // 
+import { FaUsers, FaHome, FaChartBar, FaClipboardList, FaSignOutAlt, FaTools, FaUtensils, FaPlusCircle } from 'react-icons/fa';
+import '../../styles/UserList.css';
+
+// Placeholder components
+const Overview = () => (
+    <div className="text-center p-5">
+        <FaTools size={50} className="text-muted mb-3" />
+        <h3 className="text-muted">Overview Coming Soon</h3>
+        <p className="text-muted">This feature is under development.</p>
+    </div>
+);
+
+const MENU_ITEMS = [
+    { id: 'main', label: 'Overview', icon: FaHome },
+    { id: 'userlist', label: 'User Management', icon: FaUsers },
+    { id: 'dashboard', label: 'Statistics', icon: FaChartBar },
+    { id: 'activeOrder', label: 'Active Orders', icon: FaClipboardList }
+];
 
 const ManagerDashboard = () => {
     const navigate = useNavigate();
@@ -93,6 +110,12 @@ const ManagerDashboard = () => {
             delete window.updateManagerDashboard;
         };
     }, []);
+
+    const switchToWaiterMode = () => {
+        // Store the manager role to allow switching back
+        sessionStorage.setItem('previousRole', 'manager');
+        navigate('/manager-waiter');
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -180,8 +203,8 @@ const ManagerDashboard = () => {
                 return <UserList />;
             case 'dashboard':
                 return <Dashboard />;
-            case 'activeOrder':
-                return <ActiveOrders />;
+            // case 'activeOrder':
+            //     return <ActiveOrders />;
             case 'addFood':
                 return <AddFoodForm />;
             default:
@@ -189,7 +212,6 @@ const ManagerDashboard = () => {
         }
     };
 
-  
 
     const handleLogout = () => {
         sessionStorage.clear();
@@ -230,12 +252,12 @@ const ManagerDashboard = () => {
                         >
                             <FaChartBar className="me-2" /> Dashboard
                         </Nav.Link>
-                        <Nav.Link 
+                        {/* <Nav.Link 
                             className={`text-white mb-2 ${activeTab === 'activeOrder' ? 'active bg-primary' : ''}`}
                             onClick={() => setActiveTab('activeOrder')}
                         >
                             <FaClipboardList className="me-2" /> Active Order
-                        </Nav.Link>
+                        </Nav.Link> */}
                         <Nav.Link 
                             className={`text-white mb-2 ${activeTab === 'addFood' ? 'active bg-primary' : ''}`}
                             onClick={() => setActiveTab('addFood')}
@@ -247,19 +269,53 @@ const ManagerDashboard = () => {
             </div>
 
             {/* Main Content */}
-            <div style={{ marginLeft: '250px', width: '100%' }}>
-                <Navbar bg="dark" variant="dark" className="mb-3">
-                    <Container fluid>
-                        <Navbar.Brand>Restaurant Management</Navbar.Brand>
-                        <Navbar.Toggle />
-                        <Navbar.Collapse className="justify-content-end">
-                            <Navbar.Text className="me-3">
-                                Signed in as: <span className="text-white">Manager</span>
-                            </Navbar.Text>
-                            <Button variant="outline-light" onClick={handleLogout}>
+            <div 
+                style={{ 
+                    marginLeft: '250px', 
+                    width: 'calc(100% - 250px)',
+                    minHeight: '100vh',
+                    backgroundColor: '#f8f9fa'
+                }}
+            >
+                <Navbar 
+                    bg="white" 
+                    className="border-bottom shadow-sm py-3 px-4 mb-4"
+                    style={{ height: '70px' }}
+                >
+                    <Container fluid className="px-0">
+                        <Navbar.Brand className="fw-bold" style={{ color: '#2c3e50' }}>
+                            {MENU_ITEMS.find(item => item.id === activeTab)?.label || 'Dashboard'}
+                        </Navbar.Brand>
+                        <div className="d-flex align-items-center gap-3">
+                            <Button
+                                variant="success"
+                                onClick={switchToWaiterMode}
+                                className="d-flex align-items-center gap-2 rounded-pill px-3 me-2"
+                            >
+                                <FaUtensils />
+                                Switch to Waiter Mode
+                            </Button>
+                            <div className="d-flex align-items-center">
+                                <div 
+                                    className="rounded-circle bg-light p-2 me-2"
+                                    style={{ width: '40px', height: '40px' }}
+                                >
+                                    <FaUsers className="text-primary" size={20} />
+                                </div>
+                                <div>
+                                    <small className="text-muted">Signed in as</small>
+                                    <div className="fw-bold" style={{ color: '#2c3e50' }}>Manager</div>
+                                </div>
+                            </div>
+                            <Button 
+                                variant="outline-danger" 
+                                onClick={handleLogout}
+                                className="d-flex align-items-center gap-2 rounded-pill px-3"
+                            >
+                                <FaSignOutAlt />
                                 Logout
                             </Button>
-                        </Navbar.Collapse>
+                        </div>    
                     </Container>
                 </Navbar>
                 <Container fluid className="p-3">

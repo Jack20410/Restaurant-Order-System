@@ -69,6 +69,16 @@ export const socketService = {
     unsubscribeFromOrders: () => {
         socket.off('order_update');
     },
+
+    // Subscribe to table updates
+    subscribeToTableUpdates: (callback) => {
+        socket.on('table_update', callback);
+    },
+
+    // Unsubscribe from table updates
+    unsubscribeFromTableUpdates: () => {
+        socket.off('table_update');
+    },
     
     // Subscribe to menu updates
     subscribeToMenuUpdates: (callback) => {
@@ -107,6 +117,21 @@ export const socketService = {
                 status: orderData.status 
             });
         }
+    },
+
+    // Emit table update
+    emitTableUpdate: (tableData) => {
+        if (!socketConnected) {
+            console.warn('Socket not connected. Attempting to reconnect...');
+            socket.connect();
+        }
+        
+        console.log('Emitting table update via WebSocket:', tableData);
+        socket.emit('table_update', {
+            table_id: tableData.tableId,
+            status: tableData.status,
+            timestamp: new Date().toISOString()
+        });
     },
     
     // Emit menu update

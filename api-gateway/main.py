@@ -69,6 +69,21 @@ async def order_update(sid, data):
     await sio.emit('order_update', data, skip_sid=sid)
 
 @sio.event
+async def table_update(sid, data):
+    print(f"Table status update received: {data}")
+    try:
+        # Broadcast table update to all connected clients except sender
+        await sio.emit('table_update', {
+            'table_id': data['table_id'],
+            'status': data['status'],
+            'timestamp': data['timestamp']
+        }, skip_sid=sid)
+        return {"status": "success", "message": "Table status updated successfully"}
+    except Exception as e:
+        print(f"Error broadcasting table update: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@sio.event
 async def menu_update(sid, data):
     # Broadcast menu update to all connected clients except sender
     await sio.emit('menu_update', data, skip_sid=sid)
