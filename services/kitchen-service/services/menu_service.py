@@ -128,3 +128,21 @@ class MenuService:
             "updated_count": updated_count,
             "not_found": not_found_food_ids
         }
+
+    @staticmethod
+    def delete_food(food_id: str) -> Dict[str, str]:
+        """
+        Xóa món ăn khỏi menu
+        """
+        food_menu = get_food_menu()
+        # Kiểm tra món ăn có tồn tại không
+        food = food_menu.find_one({"food_id": food_id})
+        if not food:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Không tìm thấy món ăn với food_id: {food_id}"
+            )
+        
+        # Xóa món ăn
+        food_menu.delete_one({"food_id": food_id})
+        return {"message": f"Đã xóa món ăn {food['name']} thành công"}

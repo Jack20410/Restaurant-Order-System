@@ -4,11 +4,18 @@ from database import db, ensure_db_connection
 from enum import Enum
 
 # === Food Menu Models ===
+class FoodCategory(str, Enum):
+    SOUP_BASE = "SoupBase"
+    SIGNATURE_FOOD = "SignatureFood"
+    SIDE_DISH = "SideDish"
+    MEAT = "Meat"
+    BEVERAGES_DESSERTS = "Beverages&Desserts"
+
 class FoodItem(BaseModel):
     name: str
     availability: bool = True
     image: str
-    category: str
+    category: FoodCategory
     description: str
     price: float
     food_id: str

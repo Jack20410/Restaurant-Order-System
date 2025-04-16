@@ -44,6 +44,38 @@ async def get_menu():
     
     return response
 
+@router.post("/menu", response_model=Dict[str, str])
+@router.post("/menu/", response_model=Dict[str, str])
+async def add_food_item(food_data: Dict[str, Any], authorization: str = Header(...)):
+    """Add new food item route forwarded to kitchen service"""
+    headers = {"Authorization": authorization}
+    response, status_code = await forward_request(
+        path="/menu/",
+        method="POST",
+        data=food_data,
+        headers=headers
+    )
+    
+    if status_code >= 400:
+        raise HTTPException(status_code=status_code, detail=response)
+    
+    return response
+
+@router.delete("/menu/{food_id}", response_model=Dict[str, str])
+async def delete_food_item(food_id: str, authorization: str = Header(...)):
+    """Delete food item route forwarded to kitchen service"""
+    headers = {"Authorization": authorization}
+    response, status_code = await forward_request(
+        path=f"/menu/{food_id}",
+        method="DELETE",
+        headers=headers
+    )
+    
+    if status_code >= 400:
+        raise HTTPException(status_code=status_code, detail=response)
+    
+    return response
+
 @router.get("/menu/available", response_model=List[Dict[str, Any]])
 async def get_available_menu():
     """Get available menu items route forwarded to kitchen service"""

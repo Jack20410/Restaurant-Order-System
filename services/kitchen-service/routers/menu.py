@@ -62,3 +62,10 @@ async def batch_update_availability(update_data: BatchFoodStatusUpdate):
     Body JSON format: {"food_ids": ["id1", "id2", ...], "availability": true/false}
     """
     return MenuService.batch_update_availability(update_data)
+
+@router.delete("/{food_id}", response_model=Dict[str, str])
+async def delete_food(food_id: str):
+    """
+    Xóa món ăn khỏi menu
+    """
+    return MenuService.delete_food(food_id)
