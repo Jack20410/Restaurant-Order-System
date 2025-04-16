@@ -377,6 +377,7 @@ const WaiterDashboard = () => {
                                         setShowOrderForm(true);
                                     }}
                                     onTableStatusChange={handleTableStatusChange}
+                                    userName={userName}  // Add this line
                                 />
                             </Card.Body>
                         </Card>

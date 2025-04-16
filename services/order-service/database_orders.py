@@ -49,10 +49,8 @@ def test_connection():
 
 def init_db():
     try:
-        # Import models here to avoid circular imports
         from models import Order, Payment, Table, OrderItem, OrderCompleted
         
-        # First check if we can connect to the database
         connection = engine.connect()
         connection.close()
         print("✅ Successfully connected to the database!")
