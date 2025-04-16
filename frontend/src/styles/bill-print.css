@@ -1,0 +1,101 @@
+@media print {
+    @page {
+        size: 80mm auto;  /* Width fixed, height auto */
+        margin: 0;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+
+    .receipt {
+        visibility: visible;
+        position: fixed;  /* Changed from absolute to fixed */
+        left: 0;
+        top: 0;
+        width: 80mm;
+        padding: 2mm;  /* Reduced padding */
+        margin: 0;
+        font-size: 12px;
+        transform-origin: top left;  /* Added for better positioning */
+        transform: scale(1);  /* Ensures 1:1 scaling */
+    }
+
+    .receipt * {
+        visibility: visible;
+        margin-top: 0 !important;  /* Force remove top margins */
+        padding-top: 0 !important;  /* Force remove top padding */
+    }
+
+    .receipt-header {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .receipt .mt-3 {
+        display: none !important;  /* Hide the buttons when printing */
+    }
+
+    .modal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .modal-dialog {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 80mm !important;
+        max-width: 80mm !important;
+    }
+
+    .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Adjust table styles for printing */
+    .receipt-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+        table-layout: fixed;  /* Added for fixed column widths */
+    }
+
+    .receipt-table th,
+    .receipt-table td {
+        padding: 2px 4px;
+    }
+
+    /* Adjust column widths and alignment */
+    .receipt-table th:nth-child(1),
+    .receipt-table td:nth-child(1) {
+        width: 40%;
+        text-align: left;
+    }
+
+    .receipt-table th:nth-child(2),
+    .receipt-table td:nth-child(2) {
+        width: 15%;
+        text-align: right;
+    }
+
+    .receipt-table th:nth-child(3),
+    .receipt-table td:nth-child(3) {
+        width: 20%;
+        text-align: right;
+    }
+
+    .receipt-table th:nth-child(4),
+    .receipt-table td:nth-child(4) {
+        width: 25%;
+        text-align: right;
+    }
+
+    /* Hide scrollbars */
+    ::-webkit-scrollbar {
+        display: none;
+    }
+}

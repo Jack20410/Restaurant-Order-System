@@ -1,0 +1,8 @@
+fastapi==0.109.2
+uvicorn==0.27.1
+httpx==0.26.0  # For HTTP requests to microservices
+python-jose==3.3.0  # For JWT handling
+python-multipart==0.0.9
+python-socketio==5.12.1  # For Socket.IO support
+python-engineio==4.11.2  # Required by python-socketio
+fastapi-socketio==0.0.10  # FastAPI Socket.IO integration

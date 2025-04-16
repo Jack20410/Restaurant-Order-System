@@ -1,0 +1,64 @@
+# Core FastAPI dependencies
+fastapi==0.109.2
+uvicorn==0.27.1
+
+# Database
+sqlalchemy==2.0.27
+pymysql==1.1.0  # Changed from mysqlclient for better compatibility
+python-dotenv==1.0.1
+alembic==1.13.1
+cryptography==42.0.2
+
+# API Models & Validation
+pydantic==2.6.1
+email-validator==2.1.0.post1
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.9
+
+# Testing
+pytest==8.0.2
+httpx==0.27.0
+
+# Async Tasks & Caching (not currently used based on codebase)
+# redis==5.0.1
+# celery==5.3.6
+
+#Run pip install -r requirements.txt to install all the dependencies
+# Phạm vi trách nhiệm:
+#	- Quản lý người dùng (waiter, kitchen, management)
+#	- Xác thực & phân quyền người dùng
+#	- Xử lý thông báo cho nhân viên/bếp
+#	- Xem báo cáo doanh thu tổng hợp
+
+# 📌 Database (MySQL)
+# 1  Bảng users (Quản lý nhân viên)
+# user_id	email	password	role	shifts
+# INT (PK)	VARCHAR	VARCHAR	ENUM(waiter, kitchen, management)	JSON
+
+# 2  Bảng notifications (Thông báo)
+# notification_id	user_id	message	status
+# INT (PK)	INT (FK -> users)	TEXT	ENUM(read, unread)
+
+# 📌 API Cần Làm
+# ✔ POST /users/create → Tạo tài khoản nhân viên hoặc khách hàng ==> #done
+# ✔ GET /users/{id} → Xem thông tin người dùng ==> #done
+# ✔ GET /users/ → Xem danh sách tất cả người dùng ==> #done
+# ✔ POST /auth/login → Đăng nhập ==> #done
+# ✔ POST /auth/logout → Đăng xuất ==> #done
+# ✔ POST /notifications → Gửi thông báo cho nhân viên/bếp
+# ✔ GET /reports/revenue → Báo cáo doanh thu
+
+# user-service/
+# │── main.py               # Chạy FastAPI app
+# │── models.py             # Định nghĩa database models
+# │── database.py           # Kết nối MySQL
+# │── auth.py               # Xử lý JWT
+# │── routers/
+# │   ├── users.py          # API quản lý tài khoản
+# │── services/
+# │   ├── user_service.py   # Business logic của user
+# │── requirements.txt      # Các thư viện cần cài đặt
+# │── Dockerfile            # Docker build

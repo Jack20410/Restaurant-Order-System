@@ -1,0 +1,51 @@
+fastapi==0.103.1
+uvicorn==0.23.2
+pymongo==4.5.0
+python-dotenv==1.0.0
+pydantic==2.3.0
+python-multipart==0.0.9
+requests==2.31.0
+
+# Run pip install -r requirements.txt to install all the dependencies
+# Kitchen Service Documentation
+
+# # Responsibilities
+# - Menu management
+# - Kitchen order processing
+# - Food status updates
+
+# ## Database Schema (MongoDB)
+# ### food_menu Collection
+# - food_id: Unique identifier
+# - name: Food item name
+# - quantity: Available quantity
+# - availability: Stock status
+# - image: Food image URL
+# - note: Additional notes
+# - category: Food category
+
+# ### kitchen_orders Collection
+# - order_id: Unique identifier
+# - items: List of ordered items
+# - status: Order status
+
+# ## API Endpoints
+# - GET /menu → View food menu
+# - GET /menu/category/{category} → View food menu by category
+# - GET /menu/{food_id} → View food by food id
+# - POST /menu → Add new food item
+# - PATCH /menu/{food_id}/availability → Update food status
+
+# # Project Structure
+# kitchen-service/
+# │── main.py               # FastAPI application entry point
+# │── models.py             # MongoDB database models
+# │── database.py           # MongoDB connection setup
+# │── routers/
+# │   ├── menu.py           # Menu management endpoints
+# │   ├── kitchen.py        # Kitchen order endpoints
+# │── services/
+# │   ├── menu_service.py   # Menu business logic
+# │   ├── kitchen_service.py# Kitchen order business logic
+# │── requirements.txt      # Project dependencies
+# │── Dockerfile            # Docker configuration

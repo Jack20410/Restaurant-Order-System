@@ -1,0 +1,111 @@
+services:
+  api-gateway:
+    build: 
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  # Main port exposed to the public
+    depends_on:
+      - user-service
+      - order-service
+      - kitchen-service
+    networks:
+      - restaurant-network
+    environment:
+      - USER_SERVICE_URL=http://user-service:8000
+      - ORDER_SERVICE_URL=http://order-service:8000
+      - KITCHEN_SERVICE_URL=http://kitchen-service:8000
+
+  user-service:
+    build: 
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"  # External:Internal
+    environment:
+      - DATABASE_URL=mysql+pymysql://user:password@user-db:3306/user_db
+      - JWT_SECRET=your-secret-key
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - restaurant-network
+
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"  # External:Internal
+    environment:
+      - DATABASE_URL=mysql+pymysql://user:password@order-db:3306/order_db
+      - USER_SERVICE_URL=http://user-service:8000
+      - KITCHEN_SERVICE_URL=http://kitchen-service:8000
+    depends_on:
+      order-db:
+        condition: service_healthy
+    networks:
+      - restaurant-network
+
+  kitchen-service:
+    build:
+      context: ./services/kitchen-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8000"  # External:Internal
+    environment:
+      - MONGODB_URL=mongodb+srv://duclinhhopham:duclinh2503@projectsoa.4nvx0yg.mongodb.net/?retryWrites=true&w=majority&appName=ProjectSOA
+      - DB_NAME=KitchenServices
+      - USER_SERVICE_URL=http://user-service:8000
+    depends_on:
+      - user-service
+    networks:
+      - restaurant-network
+
+  user-db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=user_db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    ports:
+      - "3306:3306"
+    volumes:
+      - user-db-data:/var/lib/mysql
+    networks:
+      - restaurant-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  order-db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=order_db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    ports:
+      - "3307:3306"
+    volumes:
+      - order-db-data:/var/lib/mysql
+    networks:
+      - restaurant-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  user-db-data:
+  order-db-data:
+
+networks:
+  restaurant-network:
+    driver: bridge
