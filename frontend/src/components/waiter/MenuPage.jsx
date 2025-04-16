@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { BsCart3 } from 'react-icons/bs';
 import { socketService } from '../../services/socketService';
-
+import '../../styles/MenuPage.css';
 // Define category order
 const CATEGORY_ORDER = [
     'SoupBase',
@@ -267,11 +267,11 @@ const MenuPage = () => {
             </Button>
 
             {/* Cart Modal */}
-            <Modal show={showCart} onHide={() => setShowCart(false)} size="lg">
+            <Modal show={showCart} onHide={() => setShowCart(false)} size="lg" dialogClassName="cart-modal">
                 <Modal.Header closeButton>
                     <Modal.Title>Order Cart - Table {tableId}</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="cart-modal-body">
                     {cart.length === 0 ? (
                         <p className="text-center text-muted">Cart is empty</p>
                     ) : (

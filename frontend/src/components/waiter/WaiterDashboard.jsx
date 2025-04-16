@@ -370,7 +370,6 @@ const WaiterDashboard = () => {
                                 <h4 className="mb-0">Table Layout</h4>
                             </Card.Header>
                             <Card.Body>
-                                // In the return section, update the TableGrid component
                                 <TableGrid 
                                     tables={tables}
                                     onTableSelect={(table) => {
