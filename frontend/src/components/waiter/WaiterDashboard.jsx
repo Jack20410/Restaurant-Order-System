@@ -370,6 +370,7 @@ const WaiterDashboard = () => {
                                 <h4 className="mb-0">Table Layout</h4>
                             </Card.Header>
                             <Card.Body>
+                                // In the return section, update the TableGrid component
                                 <TableGrid 
                                     tables={tables}
                                     onTableSelect={(table) => {
@@ -377,6 +378,7 @@ const WaiterDashboard = () => {
                                         setShowOrderForm(true);
                                     }}
                                     onTableStatusChange={handleTableStatusChange}
+                                    userName={userName}  // Add this line
                                 />
                             </Card.Body>
                         </Card>

@@ -40,21 +40,24 @@ def test_connection():
 
 def init_db():
     try:
-        # Import models here to avoid circular imports
         from models import Order, Payment, Table, OrderItem, OrderCompleted
         
-        # First check if we can connect to the database
         connection = engine.connect()
         connection.close()
         print("✅ Successfully connected to the database!")
         
-        # Drop all tables first to ensure clean state
+        # Disable foreign key checks before dropping tables
+        with engine.connect() as conn:
+            conn.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
+            
+        # Drop and recreate tables
         Base.metadata.drop_all(bind=engine)
         print("Dropped all existing tables")
-        
-        # Then create tables
-        print("Creating database tables...")
         Base.metadata.create_all(bind=engine)
+        
+        # Re-enable foreign key checks
+        with engine.connect() as conn:
+            conn.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
         
         # Verify tables were created
         with engine.connect() as conn:

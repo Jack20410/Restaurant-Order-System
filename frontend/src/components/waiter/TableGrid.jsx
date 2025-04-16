@@ -1,9 +1,36 @@
-import React, { useState } from 'react';
+// Add this import at the top of the file
+import '../../styles/TableGrid.css';
+// import React, { useState } from 'react';
 import { Card, Button, Badge, Modal, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useState, useEffect } from 'react';
 
-const TableGrid = ({ tables, onTableSelect, onTableStatusChange }) => {
+const TableGrid = ({ tables, onTableSelect, onTableStatusChange, userName }) => {
+    // Add this state with other states
+    const [menuItems, setMenuItems] = useState([]);
+
+    // Add this useEffect after other useEffects
+    useEffect(() => {
+        fetchMenuItems();
+    }, []);
+
+    // Add this function with other functions
+    const fetchMenuItems = async () => {
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.get('/api/kitchen/menu', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.data) {
+                setMenuItems(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching menu items:', error);
+        }
+    };
     const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -155,22 +182,88 @@ const TableGrid = ({ tables, onTableSelect, onTableStatusChange }) => {
             </Modal>
 
             {/* Payment Modal */}
-            <Modal show={showPaymentModal} onHide={handleCloseModal} centered>
+            <Modal show={showPaymentModal} onHide={handleCloseModal} centered dialogClassName="wide-payment-modal">
                 <Modal.Header closeButton>
                     <Modal.Title>Payment for Table {selectedTable?.number}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {receipt ? (
                         <div className="receipt">
-                            <h5>Receipt</h5>
-                            <p>Receipt ID: {receipt.receipt_id}</p>
-                            <p>Customer: {receipt.customer_info.name}</p>
-                            <p>Phone: {receipt.customer_info.phone}</p>
-                            <p>Total Amount: ${receipt.total_amount.toFixed(2)}</p>
-                            <p>Payment Date: {new Date(receipt.payment_date).toLocaleString()}</p>
-                            <div className="mt-3">
+                            <div className="receipt-header">
+                                <h5>RESTAURANT</h5>
+                                <p>19 Đ. Nguyễn Hữu Thọ, Tân Phong, Quận 7, Hồ Chí Minh</p>
+                                <p>ĐT:  028 3775 5052 -  028 3775 5052</p>
+                            </div>
+                            
+                            <div className="receipt-title">
+                                RECEIPT
+                            </div>
+
+                            <div className="receipt-info">
+                                <span>Số HĐ: {receipt.receipt_id}</span>
+                                <span>Bàn {selectedTable?.number}</span>
+                            </div>
+                            <div className="receipt-info">
+                                <span>Ngày in: {new Date(receipt.payment_date).toLocaleString('vi-VN', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                })}</span>
+                           
+                            </div>
+                            
+                            <div className="receipt-info">
+                                <span>Thu ngân: {userName} (#{receipt.employee_info.employee_id})</span>
+                            </div>
+
+                            
+                            <div className="receipt-info">
+                                <span>Khách hàng: {receipt.customer_info.name}</span>
+                            </div>
+
+                            <table className="receipt-table">
+                                <thead>
+                                    <tr>
+                                        <th>TÊN HÀNG</th>
+                                        <th>SL</th>
+                                        <th>Đơn Giá</th>
+                                        <th>T.TIỀN</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {receipt.order_details.orders[0].items.map((item, index) => {
+                                        const menuItem = menuItems.find(m => m.food_id === item.food_id);
+                                        return (
+                                            <tr key={index}>
+                                                <td>{index + 1}) {menuItem ? menuItem.name : item.food_id}</td>
+                                                <td>{item.quantity}</td>
+                                                <td>{menuItem ? menuItem.price.toLocaleString('vi-VN') : item.price?.toLocaleString('vi-VN')}đ</td>
+                                                <td>{(item.quantity * (menuItem ? menuItem.price : item.price))?.toLocaleString('vi-VN')}đ</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+
+                            <div className="receipt-info" style={{borderTop: '1px dashed #000', paddingTop: '10px'}}>
+                                <strong>T.Cộng</strong>
+                                <strong>{receipt.total_amount.toLocaleString('vi-VN')}đ</strong>
+                            </div>
+                            <div className="receipt-info">
+                                <strong>CASH</strong>
+                                <strong>{receipt.total_amount.toLocaleString('vi-VN')}đ</strong>
+                            </div>
+
+                            <div className="receipt-footer">
+                                SEE YOU SOON!
+                            </div>
+
+                            <div className="mt-3 d-flex gap-2">
                                 <Button variant="success" onClick={handleCloseModal}>
                                     Close
+                                </Button>
+                                <Button variant="primary" onClick={() => window.print()}>
+                                    Print Receipt
                                 </Button>
                             </div>
                         </div>
