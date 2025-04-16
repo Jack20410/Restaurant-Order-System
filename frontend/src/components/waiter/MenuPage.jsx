@@ -196,7 +196,7 @@ const MenuPage = () => {
             <Row>
                 <Col md={3}>
                     <Card className="mb-3 sticky-top" style={{ top: '1rem' }}>
-                        <Card.Header className="bg-primary text-white">
+                        <Card.Header className="bg-danger text-white">
                             <h5 className="mb-0">Categories</h5>
                         </Card.Header>
                         <Nav className="flex-column">
@@ -229,11 +229,11 @@ const MenuPage = () => {
                                             {item.description}
                                         </Card.Text>
                                         <div className="mt-auto d-flex justify-content-between align-items-center">
-                                            <span className="h5 mb-0 text-primary">
+                                            <span className="h5 mb-0 text-danger">
                                                 {formatPrice(item.price)}
                                             </span>
                                             <Button 
-                                                variant="outline-primary"
+                                                variant="outline-danger"
                                                 onClick={() => handleAddToCart(item)}
                                                 disabled={!item.availability}
                                             >
@@ -252,7 +252,7 @@ const MenuPage = () => {
             <Button
                 className="position-fixed bottom-0 end-0 mb-4 me-4 rounded-circle p-3"
                 style={{ width: '60px', height: '60px', zIndex: 1050 }}
-                variant="primary"
+                variant="danger"
                 onClick={() => setShowCart(true)}
             >
                 <BsCart3 size={24} />
@@ -331,7 +331,7 @@ const MenuPage = () => {
                             Continue Shopping
                         </Button>
                         <Button 
-                            variant="primary" 
+                            variant="danger" 
                             onClick={handlePlaceOrder}
                             disabled={cart.length === 0}
                             className="me-2"

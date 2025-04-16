@@ -6,13 +6,93 @@ import ActiveOrders from '../waiter/ActiveOrders';
 import { FaUsers, FaHome, FaChartBar, FaClipboardList, FaUtensils, FaPlusCircle } from 'react-icons/fa';
 import Dashboard from './Dashboard';
 import AddFoodForm from './AddFoodForm';
+import axios from 'axios';
+import styles from '../../styles/ManagerDashboard.module.css'; // 
 
 const ManagerDashboard = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('userlist');
+    const [activeTab, setActiveTab] = useState('main');
+    const [staffCounts, setStaffCounts] = useState({
+        waiters: 0,
+        kitchen: 0,
+        dayShift: 0,    // Add this
+        nightShift: 0   // Add this
+    });
+    const [completedOrders, setCompletedOrders] = useState(0);
 
+    // Add function to fetch completed orders
+    const fetchCompletedOrders = async () => {
+        try {
+            const token = sessionStorage.getItem('token');
+            if (!token) {
+                navigate('/', { replace: true });
+                return;
+            }
 
-  
+            const response = await axios.get('/api/orders/completed/today', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setCompletedOrders(response.data.count);
+        } catch (err) {
+            console.error('Error fetching completed orders:', err);
+        }
+    };
+
+    // Update useEffect
+    useEffect(() => {
+        fetchStaffCounts();
+        fetchCompletedOrders();
+    }, []);
+
+    // Update fetchStaffCounts function
+    const fetchStaffCounts = async () => {
+        try {
+            const token = sessionStorage.getItem('token');
+            if (!token) {
+                navigate('/', { replace: true });
+                return;
+            }
+
+            const response = await axios.get('/api/users/users', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const counts = response.data.reduce((acc, user) => {
+                // Count by role
+                if (user.role === 'waiter') acc.waiters++;
+                if (user.role === 'kitchen') acc.kitchen++;
+                
+                // Count by shift
+                if (user.shifts === 'day') acc.dayShift++;
+                if (user.shifts === 'night') acc.nightShift++;
+                
+                return acc;
+            }, { waiters: 0, kitchen: 0, dayShift: 0, nightShift: 0 });
+
+            setStaffCounts(counts);
+        } catch (err) {
+            console.error('Error fetching staff counts:', err);
+        }
+    };
+
+    // Add useEffect to fetch counts when component mounts
+    useEffect(() => {
+        fetchStaffCounts();
+    }, []);
+
+    // Add this useEffect to set up the global update function
+    useEffect(() => {
+        window.updateManagerDashboard = fetchStaffCounts;
+        
+        // Cleanup function to remove the global function when component unmounts
+        return () => {
+            delete window.updateManagerDashboard;
+        };
+    }, []);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -21,49 +101,79 @@ const ManagerDashboard = () => {
                     <div>
                         <h2 className="mb-4">Dashboard Overview</h2>
                         <Row className="g-4">
-                            <Col md={4}>
-                                <Card className="h-100 shadow-sm">
+                            <Col md={3}>
+                                <Card className={`h-100 shadow-sm ${styles.cardHover}`}>
                                     <Card.Body className="text-center">
                                         <div className="display-4 text-primary mb-3">
                                             <FaUsers />
                                         </div>
                                         <Card.Title>Waiters</Card.Title>
-                                        <h2 className="display-4 mb-3">0</h2>
+                                        <h2 className="display-4 mb-3">{staffCounts.waiters}</h2>
                                         <Card.Text className="text-muted">
                                             Active Staff Members
                                         </Card.Text>
                                     </Card.Body>
                                 </Card>
                             </Col>
-                            <Col md={4}>
-                                <Card className="h-100 shadow-sm">
+                            <Col md={3}>
+                                <Card className={`h-100 shadow-sm ${styles.cardHover}`}>
                                     <Card.Body className="text-center">
                                         <div className="display-4 text-success mb-3">
                                             <FaUtensils />
                                         </div>
                                         <Card.Title>Kitchen Staff</Card.Title>
-                                        <h2 className="display-4 mb-3">0</h2>
+                                        <h2 className="display-4 mb-3">{staffCounts.kitchen}</h2>
                                         <Card.Text className="text-muted">
                                             Active Kitchen Members
                                         </Card.Text>
                                     </Card.Body>
                                 </Card>
                             </Col>
-                            <Col md={4}>
-                                <Card className="h-100 shadow-sm">
+                            <Col md={3}>
+                                <Card className={`h-100 shadow-sm ${styles.cardHover}`}>
                                     <Card.Body className="text-center">
-                                        <div className="display-4 text-warning mb-3">
-                                            <FaClipboardList />
+                                        <div className="display-4 text-info mb-3">
+                                            <FaUsers />
                                         </div>
-                                        <Card.Title>Today's Orders</Card.Title>
-                                        <h2 className="display-4 mb-3">25</h2>
+                                        <Card.Title>Day Shift</Card.Title>
+                                        <h2 className="display-4 mb-3">{staffCounts.dayShift}</h2>
                                         <Card.Text className="text-muted">
-                                            Orders Processed Today
+                                            Day Shift Staff
+                                        </Card.Text>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                            <Col md={3}>
+                                <Card className={`h-100 shadow-sm ${styles.cardHover}`}>
+                                    <Card.Body className="text-center">
+                                        <div className="display-4 text-secondary mb-3">
+                                            <FaUsers />
+                                        </div>
+                                        <Card.Title>Night Shift</Card.Title>
+                                        <h2 className="display-4 mb-3">{staffCounts.nightShift}</h2>
+                                        <Card.Text className="text-muted">
+                                            Night Shift Staff
                                         </Card.Text>
                                     </Card.Body>
                                 </Card>
                             </Col>
                         </Row>
+                            {/* <Row  className={`h-100 shadow-sm mt-4 ${styles.cardHover}`}>
+                                    <Col>
+                                        <Card className="h-100 shadow-sm">
+                                            <Card.Body className="text-center">
+                                                <div className="display-4 text-warning mb-3">
+                                                    <FaClipboardList />
+                                                </div>
+                                                <Card.Title>Completed Orders</Card.Title>
+                                                <h2 className="display-4 mb-3">{completedOrders}</h2>
+                                                <Card.Text className="text-muted">
+                                                    Orders Completed Today
+                                                </Card.Text>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
+                                </Row> */}
                     </div>
                 );
             case 'userlist':

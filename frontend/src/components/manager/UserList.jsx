@@ -86,6 +86,15 @@ const UserList = () => {
         setFormErrors({});
     };
 
+    // Add new prop for callback
+    const onUserUpdate = () => {
+        // Find parent component's fetchStaffCounts function
+        if (window.updateManagerDashboard) {
+            window.updateManagerDashboard();
+        }
+    };
+
+    // Modify fetchUsers to call onUserUpdate
     const fetchUsers = async () => {
         try {
             const token = sessionStorage.getItem('token');
@@ -100,6 +109,7 @@ const UserList = () => {
                 }
             });
             setUsers(response.data);
+            onUserUpdate(); // Call the update function after successful fetch
         } catch (err) {
             console.error('Error fetching users:', err);
             setError(err.response?.data?.detail || 'Failed to fetch users');
@@ -530,4 +540,4 @@ const UserList = () => {
     );
 };
 
-export default UserList; 
+export default UserList;
