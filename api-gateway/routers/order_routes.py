@@ -44,7 +44,7 @@ async def forward_request(path: str, method: str = "GET", data: dict = None,
             raise HTTPException(status_code=503, detail=f"Order service unavailable: {str(e)}")
         except Exception as e:
             print(f"Unexpected error: {str(e)}")  # Debug log
-            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
 
 # <------------------------Table endpoints------------------------>
 @router.get("/tables")

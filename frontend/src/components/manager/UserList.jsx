@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Container, Button, Modal, Form, Alert } from 'react-bootstrap';
+import { Table, Container, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
+import { FaUserPlus, FaEdit, FaTrash, FaUser, FaClock, FaEnvelope } from 'react-icons/fa';
 import axios from 'axios';
+import '../../styles/UserList.css';
 
 const ROLES = ['waiter', 'kitchen', 'manager'];
 const SHIFTS = ['day', 'night'];
@@ -233,158 +235,233 @@ const UserList = () => {
     };
 
     return (
-        <Container>
+        <Container fluid className="p-4" style={{ background: '#f8f9fa' }}>
             {error && (
-                <Alert variant="danger" onClose={() => setError('')} dismissible>
+                <Alert variant="danger" className="animate__animated animate__fadeIn shadow-sm" 
+                       onClose={() => setError('')} dismissible>
                     {error}
                 </Alert>
             )}
             {success && (
-                <Alert variant="success" onClose={() => setSuccess('')} dismissible>
+                <Alert variant="success" className="animate__animated animate__fadeIn shadow-sm" 
+                       onClose={() => setSuccess('')} dismissible>
                     {success}
                 </Alert>
             )}
 
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2>User Management</h2>
-                <Button variant="primary" onClick={() => setShowModal(true)}>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="fw-bold" style={{ color: '#2c3e50' }}>User Management</h2>
+                <Button 
+                    variant="primary" 
+                    onClick={() => setShowModal(true)}
+                    className="d-flex align-items-center gap-2 rounded-pill px-4 py-2 shadow-sm"
+                    style={{ background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)', border: 'none' }}
+                >
+                    <FaUserPlus />
                     Add New User
                 </Button>
             </div>
 
-            <Table striped bordered hover>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Shifts</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map(user => (
-                        <tr key={user.user_id}>
-                            <td>{user.user_id}</td>
-                            <td>{user.name}</td>
-                            <td>{user.mail}</td>
-                            <td>{user.role}</td>
-                            <td>{user.shifts}</td>
-                            <td>
-                                <Button 
-                                    variant="info" 
-                                    size="sm" 
-                                    className="me-2"
-                                    onClick={() => openEditModal(user)}
-                                >
-                                    Edit
-                                </Button>
-                                <Button 
-                                    variant="danger" 
-                                    size="sm"
-                                    onClick={() => handleDelete(user.user_id)}
-                                >
-                                    Delete
-                                </Button>
-                            </td>
+            <div className="bg-white rounded-3 shadow-sm overflow-hidden">
+                <Table hover className="mb-0">
+                    <thead style={{ background: '#f8f9fa' }}>
+                        <tr>
+                            <th className="px-4 py-3">ID</th>
+                            <th className="px-4 py-3">Name</th>
+                            <th className="px-4 py-3">Email</th>
+                            <th className="px-4 py-3">Role</th>
+                            <th className="px-4 py-3">Shifts</th>
+                            <th className="px-4 py-3">Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </Table>
+                    </thead>
+                    <tbody>
+                        {users.map(user => (
+                            <tr key={user.user_id} className="align-middle">
+                                <td className="px-4">{user.user_id}</td>
+                                <td className="px-4">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <div className="rounded-circle p-2" 
+                                             style={{ background: '#e9ecef' }}>
+                                            <FaUser className="text-primary" />
+                                        </div>
+                                        {user.name}
+                                    </div>
+                                </td>
+                                <td className="px-4">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <FaEnvelope className="text-muted" />
+                                        {user.mail}
+                                    </div>
+                                </td>
+                                <td className="px-4">
+                                    <Badge bg={
+                                        user.role === 'manager' ? 'primary' :
+                                        user.role === 'waiter' ? 'success' : 'info'
+                                    } className="text-capitalize px-3 py-2">
+                                        {user.role}
+                                    </Badge>
+                                </td>
+                                <td className="px-4">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <FaClock className="text-muted" />
+                                        <span className="text-capitalize">{user.shifts}</span>
+                                    </div>
+                                </td>
+                                <td className="px-4">
+                                    <div className="d-flex gap-2">
+                                        <Button 
+                                            variant="light"
+                                            className="d-flex align-items-center gap-2 rounded-pill px-3 py-2 shadow-sm"
+                                            onClick={() => openEditModal(user)}
+                                        >
+                                            <FaEdit className="text-primary" />
+                                            Edit
+                                        </Button>
+                                        <Button 
+                                            variant="light"
+                                            className="d-flex align-items-center gap-2 rounded-pill px-3 py-2 shadow-sm"
+                                            onClick={() => handleDelete(user.user_id)}
+                                        >
+                                            <FaTrash className="text-danger" />
+                                            Delete
+                                        </Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </div>
 
             {/* Add User Modal */}
             <Modal show={showModal} onHide={() => {
                 resetForm();
                 setShowModal(false);
-            }}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Add New User</Modal.Title>
+            }}
+            size="lg"
+            centered>
+                <Modal.Header closeButton className="border-0 pb-0">
+                    <Modal.Title className="fw-bold" style={{ color: '#2c3e50' }}>
+                        Add New User
+                    </Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="p-4">
                     <Form onSubmit={handleSubmit}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Name</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => {
-                                    setFormData({...formData, name: e.target.value});
-                                    setFormErrors({...formErrors, name: ''});
+                        <div className="row">
+                            <div className="col-md-6">
+                                <Form.Group className="mb-4">
+                                    <Form.Label className="fw-semibold">Name</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={(e) => {
+                                            setFormData({...formData, name: e.target.value});
+                                            setFormErrors({...formErrors, name: ''});
+                                        }}
+                                        isInvalid={!!formErrors.name}
+                                        className="rounded-pill py-2 px-3"
+                                        placeholder="Enter user name"
+                                        required
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {formErrors.name}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </div>
+                            <div className="col-md-6">
+                                <Form.Group className="mb-4">
+                                    <Form.Label className="fw-semibold">Email</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        value={formData.mail}
+                                        onChange={(e) => {
+                                            setFormData({...formData, mail: e.target.value});
+                                            setFormErrors({...formErrors, mail: ''});
+                                        }}
+                                        isInvalid={!!formErrors.mail}
+                                        className="rounded-pill py-2 px-3"
+                                        placeholder="Enter email address"
+                                        required
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {formErrors.mail}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </div>
+                        </div>
+                        <div className="row">
+                            <div className="col-md-12">
+                                <Form.Group className="mb-4">
+                                    <Form.Label className="fw-semibold">Password</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={(e) => {
+                                            setFormData({...formData, password: e.target.value});
+                                            setFormErrors({...formErrors, password: ''});
+                                        }}
+                                        isInvalid={!!formErrors.password}
+                                        className="rounded-pill py-2 px-3"
+                                        placeholder="Enter password"
+                                        required
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {formErrors.password}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </div>
+                        </div>
+                        <div className="row">
+                            <div className="col-md-6">
+                                <Form.Group className="mb-4">
+                                    <Form.Label className="fw-semibold">Role</Form.Label>
+                                    <Form.Select
+                                        value={formData.role}
+                                        onChange={(e) => setFormData({...formData, role: e.target.value})}
+                                        className="rounded-pill py-2 px-3"
+                                    >
+                                        {ROLES.map(role => (
+                                            <option key={role} value={role}>
+                                                {role.charAt(0).toUpperCase() + role.slice(1)}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </div>
+                            <div className="col-md-6">
+                                <Form.Group className="mb-4">
+                                    <Form.Label className="fw-semibold">Shift</Form.Label>
+                                    <Form.Select
+                                        value={formData.shifts}
+                                        onChange={(e) => setFormData({...formData, shifts: e.target.value})}
+                                        className="rounded-pill py-2 px-3"
+                                    >
+                                        {SHIFTS.map(shift => (
+                                            <option key={shift} value={shift}>
+                                                {shift.charAt(0).toUpperCase() + shift.slice(1)}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </div>
+                        </div>
+                        <div className="d-flex justify-content-end gap-2 mt-4">
+                            <Button 
+                                variant="light" 
+                                className="rounded-pill px-4 py-2"
+                                onClick={() => {
+                                    resetForm();
+                                    setShowModal(false);
                                 }}
-                                isInvalid={!!formErrors.name}
-                                required
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {formErrors.name}
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Email</Form.Label>
-                            <Form.Control
-                                type="email"
-                                value={formData.mail}
-                                onChange={(e) => {
-                                    setFormData({...formData, mail: e.target.value});
-                                    setFormErrors({...formErrors, mail: ''});
-                                }}
-                                isInvalid={!!formErrors.mail}
-                                required
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {formErrors.mail}
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Password</Form.Label>
-                            <Form.Control
-                                type="password"
-                                value={formData.password}
-                                onChange={(e) => {
-                                    setFormData({...formData, password: e.target.value});
-                                    setFormErrors({...formErrors, password: ''});
-                                }}
-                                isInvalid={!!formErrors.password}
-                                required
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {formErrors.password}
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Role</Form.Label>
-                            <Form.Select
-                                value={formData.role}
-                                onChange={(e) => setFormData({...formData, role: e.target.value})}
                             >
-                                {ROLES.map(role => (
-                                    <option key={role} value={role}>
-                                        {role.charAt(0).toUpperCase() + role.slice(1)}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Shift</Form.Label>
-                            <Form.Select
-                                value={formData.shifts}
-                                onChange={(e) => setFormData({...formData, shifts: e.target.value})}
-                            >
-                                {SHIFTS.map(shift => (
-                                    <option key={shift} value={shift}>
-                                        {shift.charAt(0).toUpperCase() + shift.slice(1)}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
-                        <div className="d-flex justify-content-end">
-                            <Button variant="secondary" className="me-2" onClick={() => {
-                                resetForm();
-                                setShowModal(false);
-                            }}>
                                 Cancel
                             </Button>
-                            <Button variant="primary" type="submit">
+                            <Button 
+                                variant="primary" 
+                                type="submit"
+                                className="rounded-pill px-4 py-2"
+                                style={{ background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)', border: 'none' }}
+                            >
                                 Add User
                             </Button>
                         </div>
@@ -393,17 +470,20 @@ const UserList = () => {
             </Modal>
 
             {/* Edit User Modal */}
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Edit User</Modal.Title>
+            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
+                <Modal.Header closeButton className="border-0 pb-0">
+                    <Modal.Title className="fw-bold" style={{ color: '#2c3e50' }}>
+                        Edit User
+                    </Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="p-4">
                     <Form onSubmit={handleEdit}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Role</Form.Label>
+                        <Form.Group className="mb-4">
+                            <Form.Label className="fw-semibold">Role</Form.Label>
                             <Form.Select
                                 value={formData.role}
                                 onChange={(e) => setFormData({...formData, role: e.target.value})}
+                                className="rounded-pill py-2 px-3"
                             >
                                 {ROLES.map(role => (
                                     <option key={role} value={role}>
@@ -412,11 +492,12 @@ const UserList = () => {
                                 ))}
                             </Form.Select>
                         </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Shift</Form.Label>
+                        <Form.Group className="mb-4">
+                            <Form.Label className="fw-semibold">Shift</Form.Label>
                             <Form.Select
                                 value={formData.shifts}
                                 onChange={(e) => setFormData({...formData, shifts: e.target.value})}
+                                className="rounded-pill py-2 px-3"
                             >
                                 {SHIFTS.map(shift => (
                                     <option key={shift} value={shift}>
@@ -425,11 +506,20 @@ const UserList = () => {
                                 ))}
                             </Form.Select>
                         </Form.Group>
-                        <div className="d-flex justify-content-end">
-                            <Button variant="secondary" className="me-2" onClick={() => setShowEditModal(false)}>
+                        <div className="d-flex justify-content-end gap-2 mt-4">
+                            <Button 
+                                variant="light" 
+                                className="rounded-pill px-4 py-2"
+                                onClick={() => setShowEditModal(false)}
+                            >
                                 Cancel
                             </Button>
-                            <Button variant="primary" type="submit">
+                            <Button 
+                                variant="primary" 
+                                type="submit"
+                                className="rounded-pill px-4 py-2"
+                                style={{ background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)', border: 'none' }}
+                            >
                                 Save Changes
                             </Button>
                         </div>

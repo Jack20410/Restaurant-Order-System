@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from fastapi.security import OAuth2PasswordBearer
-from routers import user_routes, order_routes, kitchen_routes
+from routers import user_routes, order_routes, kitchen_routes, report_routes
 import json
 import socketio
 
@@ -94,6 +94,7 @@ async def verify_token(token: str):
 app.include_router(user_routes.router, prefix="/api/users", tags=["Users"])
 app.include_router(order_routes.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(kitchen_routes.router, prefix="/api/kitchen", tags=["Kitchen"])
+app.include_router(report_routes.router, prefix="/api/reports", tags=["Reports"])
 
 @app.get("/")
 async def root():

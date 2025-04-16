@@ -93,7 +93,7 @@ async def get_all_users(authorization: str = Header(...)):
 
 @router.get("/auth/users/{user_id}")
 async def get_user_by_id(user_id: int):
-    """Get user by ID route forwarded to user service"""
+    """Get user by ID route forwarded to user service (without auth)"""
     response, status_code = await forward_request(
         path=f"/auth/users/{user_id}", 
         method="GET"
@@ -103,6 +103,26 @@ async def get_user_by_id(user_id: int):
         raise HTTPException(status_code=status_code, detail=response)
     
     return response
+
+@router.get("/users/{user_id}", response_model=UserResponse)
+async def get_authenticated_user_by_id(user_id: int, authorization: str = Header(...)):
+    """Get user by ID route forwarded to user service (with auth)"""
+    try:
+        headers = {"Authorization": authorization}
+        response, status_code = await forward_request(
+            path=f"/auth/users/{user_id}",
+            method="GET",
+            headers=headers
+        )
+        
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=response)
+            
+        return response
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 class UserUpdateRequest(BaseModel):
     role: Optional[str] = None

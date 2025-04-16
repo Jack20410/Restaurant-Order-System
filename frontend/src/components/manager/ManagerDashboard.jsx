@@ -1,157 +1,144 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Navbar, Button, Nav, Card } from 'react-bootstrap';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Container, Row, Col, Navbar, Button, Nav } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import UserList from './UserList';
-import TableGrid from '../waiter/TableGrid';
-import ActiveOrders from '../waiter/ActiveOrders';
-import { FaUsers, FaHome, FaChartBar, FaClipboardList, FaUtensils } from 'react-icons/fa';
 import Dashboard from './Dashboard';
+import { FaUsers, FaHome, FaChartBar, FaClipboardList, FaSignOutAlt, FaTools } from 'react-icons/fa';
+import '../../styles/UserList.css';
+
+// Placeholder components
+const Overview = () => (
+    <div className="text-center p-5">
+        <FaTools size={50} className="text-muted mb-3" />
+        <h3 className="text-muted">Overview Coming Soon</h3>
+        <p className="text-muted">This feature is under development.</p>
+    </div>
+);
+
+const ActiveOrders = () => (
+    <div className="text-center p-5">
+        <FaTools size={50} className="text-muted mb-3" />
+        <h3 className="text-muted">Active Orders Coming Soon</h3>
+        <p className="text-muted">This feature is under development.</p>
+    </div>
+);
+
+const MENU_ITEMS = [
+    { id: 'main', label: 'Overview', icon: FaHome },
+    { id: 'userlist', label: 'User Management', icon: FaUsers },
+    { id: 'dashboard', label: 'Statistics', icon: FaChartBar },
+    { id: 'activeOrder', label: 'Active Orders', icon: FaClipboardList }
+];
 
 const ManagerDashboard = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('userlist');
-
-
-  
-
-    const renderContent = () => {
-        switch (activeTab) {
-            case 'main':
-                return (
-                    <div>
-                        <h2 className="mb-4">Dashboard Overview</h2>
-                        <Row className="g-4">
-                            <Col md={4}>
-                                <Card className="h-100 shadow-sm">
-                                    <Card.Body className="text-center">
-                                        <div className="display-4 text-primary mb-3">
-                                            <FaUsers />
-                                        </div>
-                                        <Card.Title>Waiters</Card.Title>
-                                        <h2 className="display-4 mb-3">0</h2>
-                                        <Card.Text className="text-muted">
-                                            Active Staff Members
-                                        </Card.Text>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            <Col md={4}>
-                                <Card className="h-100 shadow-sm">
-                                    <Card.Body className="text-center">
-                                        <div className="display-4 text-success mb-3">
-                                            <FaUtensils />
-                                        </div>
-                                        <Card.Title>Kitchen Staff</Card.Title>
-                                        <h2 className="display-4 mb-3">0</h2>
-                                        <Card.Text className="text-muted">
-                                            Active Kitchen Members
-                                        </Card.Text>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            <Col md={4}>
-                                <Card className="h-100 shadow-sm">
-                                    <Card.Body className="text-center">
-                                        <div className="display-4 text-warning mb-3">
-                                            <FaClipboardList />
-                                        </div>
-                                        <Card.Title>Today's Orders</Card.Title>
-                                        <h2 className="display-4 mb-3">25</h2>
-                                        <Card.Text className="text-muted">
-                                            Orders Processed Today
-                                        </Card.Text>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        </Row>
-                    </div>
-                );
-            case 'userlist':
-                return <UserList />;
-            case 'main':
-                return <div>Main Content</div>;
-            case 'dashboard':
-                return <Dashboard />;
-            case 'activeOrder':
-                return <Dashboard />;  // khúc này chưa làm
-            default:
-                return <UserList />;
-        }
-    };
-
-  
+    const [activeTab, setActiveTab] = useState('dashboard');
 
     const handleLogout = () => {
         sessionStorage.clear();
         navigate('/', { replace: true });
     };
 
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'main':
+                return <Overview />;
+            case 'userlist':
+                return <UserList />;
+            case 'dashboard':
+                return <Dashboard />;
+            case 'activeOrder':
+                return <ActiveOrders />;
+            default:
+                return <Dashboard />;
+        }
+    };
+
     return (
         <div className="d-flex">
             {/* Sidebar */}
             <div 
-                className="bg-dark text-white" 
+                className="bg-dark text-white shadow-lg" 
                 style={{ 
                     width: '250px', 
                     minHeight: '100vh',
                     position: 'fixed',
                     left: 0,
-                    top: 0
+                    top: 0,
+                    zIndex: 1000
                 }}
             >
-                <div className="p-3">
-                    <h5 className="text-center mb-4">Manager Menu</h5>
-                    <Nav className="flex-column">
-                        <Nav.Link 
-                            className={`text-white mb-2 ${activeTab === 'main' ? 'active bg-primary' : ''}`}
-                            onClick={() => setActiveTab('main')}
-                        >
-                            <FaHome className="me-2" /> Main
-                        </Nav.Link>
-                        <Nav.Link 
-                            className={`text-white mb-2 ${activeTab === 'userlist' ? 'active bg-primary' : ''}`}
-                            onClick={() => setActiveTab('userlist')}
-                        >
-                            <FaUsers className="me-2" /> User List
-                        </Nav.Link>
-                        <Nav.Link 
-                            className={`text-white mb-2 ${activeTab === 'dashboard' ? 'active bg-primary' : ''}`}
-                            onClick={() => setActiveTab('dashboard')}
-                        >
-                            <FaChartBar className="me-2" /> Dashboard
-                        </Nav.Link>
-                        <Nav.Link 
-                            className={`text-white mb-2 ${activeTab === 'activeOrder' ? 'active bg-primary' : ''}`}
-                            onClick={() => setActiveTab('activeOrder')}
-                        >
-                            <FaClipboardList className="me-2" /> Active Order
-                        </Nav.Link>
+                <div className="p-4">
+                    <h5 className="text-center mb-4 fw-bold">
+                        Restaurant Manager
+                    </h5>
+                    <Nav className="flex-column gap-2">
+                        {MENU_ITEMS.map(item => (
+                            <Nav.Link 
+                                key={item.id}
+                                className={`
+                                    text-white rounded-3 p-3
+                                    d-flex align-items-center
+                                    ${activeTab === item.id ? 'active bg-primary' : 'hover-effect'}
+                                `}
+                                onClick={() => setActiveTab(item.id)}
+                                style={{
+                                    transition: 'all 0.3s ease',
+                                    backgroundColor: activeTab === item.id ? '#4CAF50' : 'transparent'
+                                }}
+                            >
+                                <item.icon className="me-3" />
+                                {item.label}
+                            </Nav.Link>
+                        ))}
                     </Nav>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div style={{ marginLeft: '250px', width: '100%' }}>
-                <Navbar bg="dark" variant="dark" className="mb-3">
-                    <Container fluid>
-                        <Navbar.Brand>Restaurant Management</Navbar.Brand>
-                        <Navbar.Toggle />
-                        <Navbar.Collapse className="justify-content-end">
-                            <Navbar.Text className="me-3">
-                                Signed in as: <span className="text-white">Manager</span>
-                            </Navbar.Text>
-                            <Button variant="outline-light" onClick={handleLogout}>
+            <div 
+                style={{ 
+                    marginLeft: '250px', 
+                    width: 'calc(100% - 250px)',
+                    minHeight: '100vh',
+                    backgroundColor: '#f8f9fa'
+                }}
+            >
+                <Navbar 
+                    bg="white" 
+                    className="border-bottom shadow-sm py-3 px-4 mb-4"
+                    style={{ height: '70px' }}
+                >
+                    <Container fluid className="px-0">
+                        <Navbar.Brand className="fw-bold" style={{ color: '#2c3e50' }}>
+                            {MENU_ITEMS.find(item => item.id === activeTab)?.label || 'Dashboard'}
+                        </Navbar.Brand>
+                        <div className="d-flex align-items-center gap-3">
+                            <div className="d-flex align-items-center">
+                                <div 
+                                    className="rounded-circle bg-light p-2 me-2"
+                                    style={{ width: '40px', height: '40px' }}
+                                >
+                                    <FaUsers className="text-primary" size={20} />
+                                </div>
+                                <div>
+                                    <small className="text-muted">Signed in as</small>
+                                    <div className="fw-bold" style={{ color: '#2c3e50' }}>Manager</div>
+                                </div>
+                            </div>
+                            <Button 
+                                variant="outline-danger" 
+                                onClick={handleLogout}
+                                className="d-flex align-items-center gap-2 rounded-pill px-3"
+                            >
+                                <FaSignOutAlt />
                                 Logout
                             </Button>
-                        </Navbar.Collapse>
+                        </div>
                     </Container>
                 </Navbar>
-                <Container fluid className="p-3">
-                    <Row>
-                        <Col>
-                            {renderContent()}
-                        </Col>
-                    </Row>
+                <Container fluid className="p-4">
+                    {renderContent()}
                 </Container>
             </div>
         </div>
