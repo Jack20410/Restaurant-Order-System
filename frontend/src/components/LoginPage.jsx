@@ -84,7 +84,7 @@ const LoginPage = () => {
             if (err.response) {
                 switch (err.response.status) {
                     case 401:
-                        setError('Incorrect password. Please try again.');
+                        setError('Incorrect email or password.');
                         break;
                     case 404:
                         setError('Account does not exist. Please contact manager.');
@@ -161,7 +161,14 @@ const LoginPage = () => {
                                         )}
                                         <button type="submit" className="btn btn-primary w-100 mb-3">Sign in</button>
                                         <div className="text-center">
-                                            <a href="#" className="text-decoration-none text-muted">Forgot password?</a>
+                                            <a href="#" 
+                                               onClick={(e) => {
+                                                   e.preventDefault();
+                                                   alert('Got talk to your manager by mounth !!!');
+                                               }} 
+                                               className="text-decoration-none text-muted">
+                                                Forgot password?
+                                            </a>
                                         </div>
                                     </form>
                                 </div>
