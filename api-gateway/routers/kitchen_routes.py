@@ -31,7 +31,6 @@ async def forward_request(path: str, method: str = "GET", data: dict = None,
 
 #<------------------------Menu routes------------------------>
 @router.get("/menu", response_model=List[Dict[str, Any]])
-@router.get("/menu/", response_model=List[Dict[str, Any]])
 async def get_menu():
     """Get full menu route forwarded to kitchen service"""
     response, status_code = await forward_request(
@@ -45,7 +44,6 @@ async def get_menu():
     return response
 
 @router.post("/menu", response_model=Dict[str, str])
-@router.post("/menu/", response_model=Dict[str, str])
 async def add_food_item(food_data: Dict[str, Any], authorization: str = Header(...)):
     """Add new food item route forwarded to kitchen service"""
     headers = {"Authorization": authorization}
@@ -163,21 +161,21 @@ async def create_kitchen_order(order_data: Dict[str, Any], authorization: str = 
     
     return response
 
-@router.put("/orders/{order_id}")
-async def update_kitchen_order_status(order_id: str, status_data: Dict[str, str], authorization: str = Header(...)):
-    """Update kitchen order status route forwarded to kitchen service"""
-    headers = {"Authorization": authorization}
-    response, status_code = await forward_request(
-        path=f"/{order_id}", 
-        method="PUT",
-        data=status_data,
-        headers=headers
-    )
+# @router.put("/orders/{order_id}")
+# async def update_kitchen_order_status(order_id: str, status_data: Dict[str, str], authorization: str = Header(...)):
+#     """Update kitchen order status route forwarded to kitchen service"""
+#     headers = {"Authorization": authorization}
+#     response, status_code = await forward_request(
+#         path=f"/{order_id}", 
+#         method="PUT",
+#         data=status_data,
+#         headers=headers
+#     )
     
-    if status_code >= 400:
-        raise HTTPException(status_code=status_code, detail=response)
+#     if status_code >= 400:
+#         raise HTTPException(status_code=status_code, detail=response)
     
-    return response
+#     return response
 
 @router.patch("/orders/{order_id}/serve")
 async def mark_items_served(order_id: str, data: Dict[str, List[int]], authorization: str = Header(...)):
