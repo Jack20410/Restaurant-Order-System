@@ -244,7 +244,7 @@ const ManagerDashboard = () => {
                             className={`text-white mb-2 ${activeTab === 'userlist' ? 'active bg-primary' : ''}`}
                             onClick={() => setActiveTab('userlist')}
                         >
-                            <FaUsers className="me-2" /> User List
+                            <FaUsers className="me-2" /> Users List
                         </Nav.Link>
                         <Nav.Link 
                             className={`text-white mb-2 ${activeTab === 'dashboard' ? 'active bg-primary' : ''}`}
@@ -262,7 +262,7 @@ const ManagerDashboard = () => {
                             className={`text-white mb-2 ${activeTab === 'addFood' ? 'active bg-primary' : ''}`}
                             onClick={() => setActiveTab('addFood')}
                         >
-                            <FaPlusCircle className="me-2" /> Add New Food
+                            <FaPlusCircle className="me-2" /> Menu Items List
                         </Nav.Link>
                     </Nav>
                 </div>
