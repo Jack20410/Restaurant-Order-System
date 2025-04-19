@@ -38,29 +38,29 @@ const ManagerDashboard = () => {
     const [completedOrders, setCompletedOrders] = useState(0);
 
     // Add function to fetch completed orders
-    const fetchCompletedOrders = async () => {
-        try {
-            const token = sessionStorage.getItem('token');
-            if (!token) {
-                navigate('/', { replace: true });
-                return;
-            }
+    // const fetchCompletedOrders = async () => {
+    //     try {
+    //         const token = sessionStorage.getItem('token');
+    //         if (!token) {
+    //             navigate('/', { replace: true });
+    //             return;
+    //         }
 
-            const response = await axios.get('/api/orders/completed/today', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            setCompletedOrders(response.data.count);
-        } catch (err) {
-            console.error('Error fetching completed orders:', err);
-        }
-    };
+    //         const response = await axios.get('/api/orders/completed/today', {
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`
+    //             }
+    //         });
+    //         setCompletedOrders(response.data.count);
+    //     } catch (err) {
+    //         console.error('Error fetching completed orders:', err);
+    //     }
+    // };
 
     // Update useEffect
     useEffect(() => {
         fetchStaffCounts();
-        fetchCompletedOrders();
+        //fetchCompletedOrders();
     }, []);
 
     // Update fetchStaffCounts function
