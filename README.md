@@ -17,6 +17,7 @@ A microservices restaurant order management system built with FastAPI and Docker
    docker-compose up --build -d
    ```
 3. **Important**
+
      ***Create an account in role Manager first*** at register page
    
      Then, can create more accounts in manager dashboard (or can also create an account at register page)
