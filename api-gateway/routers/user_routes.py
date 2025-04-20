@@ -61,14 +61,28 @@ async def login(login_data: LoginRequest):
     return response
 
 @router.post("/users/create", response_model=UserResponse)
-async def create_user(user_data: UserCreate, authorization: str = Header(...)):
+async def create_user(user_data: UserCreate, authorization: Optional[str] = Header(None)):
     """Create user route forwarded to user service"""
-    headers = {"Authorization": authorization}
+    headers = {"Authorization": authorization} if authorization else {}
     response, status_code = await forward_request(
         path="/users/create", 
         method="POST",
         data=user_data.dict(),
         headers=headers
+    )
+    
+    if status_code >= 400:
+        raise HTTPException(status_code=status_code, detail=response)
+    
+    return response
+
+@router.post("/register", response_model=UserResponse)
+async def register_user(user_data: UserCreate):
+    """Register new user route (alias for create without auth)"""
+    response, status_code = await forward_request(
+        path="/users/create", 
+        method="POST",
+        data=user_data.dict()
     )
     
     if status_code >= 400:

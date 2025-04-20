@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/LoginPage.css';
 
@@ -9,7 +9,18 @@ const LoginPage = () => {
         password: ''
     });
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        // Check for success message in location state
+        if (location.state?.message) {
+            setSuccessMessage(location.state.message);
+            // Clear the message from location state
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -159,6 +170,11 @@ const LoginPage = () => {
                                                 {error}
                                             </div>
                                         )}
+                                        {successMessage && (
+                                            <div className="alert alert-success" role="alert">
+                                                {successMessage}
+                                            </div>
+                                        )}
                                         <button type="submit" className="btn btn-primary w-100 mb-3">Sign in</button>
                                         <div className="text-center">
                                             <a href="#" 
@@ -169,6 +185,13 @@ const LoginPage = () => {
                                                className="text-decoration-none text-muted">
                                                 Forgot password?
                                             </a>
+                                            <hr className="my-3" />
+                                            <p className="mb-0">
+                                                Don't have an account?{' '}
+                                                <Link to="/register" className="text-primary text-decoration-none">
+                                                    Sign up
+                                                </Link>
+                                            </p>
                                         </div>
                                     </form>
                                 </div>

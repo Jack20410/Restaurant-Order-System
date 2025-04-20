@@ -7,15 +7,31 @@ let socketConnected = false;
 const getToken = () => sessionStorage.getItem('token');
 
 // Create socket connection
-const socket = io('http://localhost:8000', {
+const getSocketUrl = () => {
+    // Try to get from environment variables first
+    const envUrl = import.meta.env.VITE_SOCKET_URL;
+    if (envUrl) return envUrl;
+
+    // Fallback logic for different environments
+    if (window.location.hostname === 'localhost') {
+        // Development - try common development ports
+        return 'http://localhost:8000';
+    }
+    
+    // Production - use relative URL
+    return '/';
+};
+
+const socket = io(getSocketUrl(), {
     auth: {
         token: getToken()
     },
+    path: '/socket.io',
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    timeout: 10000,
+    timeout: 20000,
     transports: ['websocket', 'polling']
 });
 
@@ -26,7 +42,12 @@ socket.on('connect', () => {
 });
 
 socket.on('connect_error', (error) => {
-    console.error('Socket.IO connection error:', error.message);
+    console.error('Socket.IO connection error details:', {
+        message: error.message,
+        description: error.description,
+        context: error.context,
+        type: error.type
+    });
     socketConnected = false;
 });
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
+import RegisterPage from './components/RegisterPage';
 import ManagerDashboard from './components/manager/ManagerDashboard';
 import ManagerWaiterView from './components/manager/ManagerWaiterView';
 import WaiterDashboard from './components/waiter/WaiterDashboard';
@@ -48,7 +49,7 @@ const Home = () => {
     const userRole = sessionStorage.getItem('userRole');
 
     if (!token) {
-        return <LoginPage />;
+        return <Navigate to="/login" replace />;
     }
 
     // Redirect to appropriate dashboard based on role
@@ -71,6 +72,10 @@ function App() {
             <Routes>
                 {/* Home route that handles initial routing */}
                 <Route path="/" element={<Home />} />
+                
+                {/* Auth routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
 
                 {/* Manager routes */}
                 <Route

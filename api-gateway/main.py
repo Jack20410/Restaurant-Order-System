@@ -11,7 +11,7 @@ app = FastAPI(title="Restaurant API Gateway")
 # Create Socket.IO server
 sio = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins=['http://localhost:3000']
+    cors_allowed_origins=['http://localhost:3000', 'http://localhost:4000']  # Added all development ports
 )
 
 # Create ASGIApp for Socket.IO
@@ -110,6 +110,7 @@ app.include_router(user_routes.router, prefix="/api/users", tags=["Users"])
 app.include_router(order_routes.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(kitchen_routes.router, prefix="/api/kitchen", tags=["Kitchen"])
 app.include_router(report_routes.router, prefix="/api/reports", tags=["Reports"])
+
 
 @app.get("/")
 async def root():
