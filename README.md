@@ -2,6 +2,24 @@
 
 A microservices restaurant order management system built with FastAPI and Docker. The system consists of three core services that handle user management, order processing, and kitchen operations.
 
+## 🚦 Getting Started
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Jack20410/Restaurant-Order-System.git
+   cd restaurant-order-system
+   ```
+
+2. **Start the System**
+
+   Full system:
+   ```bash
+   docker-compose up --build -d
+   ```
+3. **Important**
+     **Create an account in role Manager first** at register page
+     Then, can create more accounts in manager dashboard (or can also create an account at register page)
+
 ## 🚀 Features
 
 - **User Service**: Authentication, authorization, and user profile management
@@ -42,22 +60,6 @@ restaurant-order-system/
 - Python 3.11 or higher
 - Git
 - Node.js 18+ (for frontend development)
-
-## 🚦 Getting Started
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Jack20410/Restaurant-Order-System.git
-   cd restaurant-order-system
-   ```
-
-2. **Start the System**
-
-   Full system:
-   ```bash
-   docker-compose up --build -d
-   ```
-
 
 ## 🌐 Service Endpoints
 
