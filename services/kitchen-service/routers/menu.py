@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from typing import Dict, Any, List
 from models import FoodItem, FoodStatusUpdate, BatchFoodStatusUpdate
 from services.menu_service import MenuService
+from fastapi import File, UploadFile, Form
 
 router = APIRouter()
 
@@ -69,3 +70,13 @@ async def delete_food(food_id: str):
     Xóa món ăn khỏi menu
     """
     return MenuService.delete_food(food_id)
+
+@router.post("/upload-image", response_model=Dict[str, str])
+async def upload_food_image(
+    file: UploadFile = File(...),
+    category: str = Form(...)
+):
+    """
+    Upload hình ảnh món ăn và lưu vào thư mục tương ứng với category
+    """
+    return await MenuService.upload_image(file, category)

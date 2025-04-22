@@ -1,6 +1,13 @@
 from typing import Dict, Any, List
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from models import FoodItem, FoodStatusUpdate, BatchFoodStatusUpdate, get_food_menu
+import os
+from datetime import datetime
+import logging
+
+# Thiết lập logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class MenuService:
     @staticmethod
@@ -146,3 +153,64 @@ class MenuService:
         # Xóa món ăn
         food_menu.delete_one({"food_id": food_id})
         return {"message": f"Đã xóa món ăn {food['name']} thành công"}
+
+    @staticmethod
+    async def upload_image(file: UploadFile, category: str) -> Dict[str, str]:
+        """
+        Upload hình ảnh món ăn vào thư mục tương ứng với category
+        """
+        # Kiểm tra category hợp lệ
+        valid_categories = {
+            "Beverages&Desserts": "beverages_desserts",
+            "Meat": "meat",
+            "SignatureFood": "signature",
+            "SoupBase": "soup",
+            "SideDish": "traditional"
+        }
+        
+        if category not in valid_categories:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Category không hợp lệ. Các category có sẵn: {', '.join(valid_categories.keys())}"
+            )
+
+        # Kiểm tra file type
+        if not file.content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=400,
+                detail="Chỉ chấp nhận file hình ảnh"
+            )
+
+        try:
+            # Tạo tên file mới với timestamp để tránh trùng lặp
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            original_filename = file.filename
+            filename = f"{timestamp}_{original_filename}"
+            
+            # Đường dẫn đến thư mục lưu file trong container
+            category_folder = valid_categories[category]
+            images_dir = f"/app/frontend/images/{category_folder}"
+            save_path = os.path.join(images_dir, filename)
+            
+            logger.debug(f"Saving file to: {save_path}")
+            
+            # Đảm bảo thư mục tồn tại
+            os.makedirs(images_dir, exist_ok=True)
+            
+            # Lưu file
+            contents = await file.read()
+            with open(save_path, 'wb') as f:
+                f.write(contents)
+            
+            logger.debug(f"File saved successfully to {save_path}")
+            
+            # Trả về đường dẫn tương đối để lưu vào database
+            relative_path = f"/images/{category_folder}/{filename}"
+            return {"image_url": relative_path}
+
+        except Exception as e:
+            logger.error(f"Error uploading file: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Lỗi khi upload file: {str(e)}"
+            )

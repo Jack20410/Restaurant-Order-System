@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaUpload } from 'react-icons/fa';
 
 const FOOD_CATEGORIES = {
     SOUP_BASE: "SoupBase",
@@ -24,6 +24,7 @@ const AddFoodForm = () => {
     const [showModal, setShowModal] = useState(false);
     const [menuItems, setMenuItems] = useState([]);
     const [message, setMessage] = useState({ type: '', content: '' });
+    const [selectedFile, setSelectedFile] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         availability: true,
@@ -65,9 +66,67 @@ const AddFoodForm = () => {
         }));
     };
 
+    const handleFileChange = (e) => {
+        setSelectedFile(e.target.files[0]);
+    };
+
+    const uploadImage = async () => {
+        if (!selectedFile) {
+            setMessage({ type: 'danger', content: 'Please select an image file' });
+            return null;
+        }
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('category', formData.category);
+
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.post(
+                'http://localhost:8000/api/kitchen/menu/upload-image',
+                formData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+            return response.data.image_url;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            setMessage({ 
+                type: 'danger', 
+                content: error.response?.data?.detail || 'Error uploading image' 
+            });
+            return null;
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Upload image first if a file is selected
+            let imageUrl = formData.image;
+            if (selectedFile) {
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', selectedFile);
+                uploadFormData.append('category', formData.category);
+                
+                const token = sessionStorage.getItem('token');
+                const uploadResponse = await axios.post(
+                    'http://localhost:8000/api/kitchen/menu/upload-image',
+                    uploadFormData,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    }
+                );
+                imageUrl = uploadResponse.data.image_url;
+            }
+
             const token = sessionStorage.getItem('token');
             if (!token) {
                 setMessage({ type: 'danger', content: 'You are not logged in or your session has expired!' });
@@ -76,6 +135,7 @@ const AddFoodForm = () => {
 
             const response = await axios.post('http://localhost:8000/api/kitchen/menu/', {
                 ...formData,
+                image: imageUrl,
                 price: parseFloat(formData.price)
             }, {
                 headers: {
@@ -95,6 +155,7 @@ const AddFoodForm = () => {
                     price: '',
                     food_id: ''
                 });
+                setSelectedFile(null);
                 // Close modal and refresh menu items
                 setShowModal(false);
                 fetchMenuItems();
@@ -232,14 +293,20 @@ const AddFoodForm = () => {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Image URL</Form.Label>
-                            <Form.Control
-                                type="text"
-                                name="image"
-                                value={formData.image}
-                                onChange={handleChange}
-                                required
-                            />
+                            <Form.Label>Image</Form.Label>
+                            <div className="d-flex align-items-center">
+                                <Form.Control
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    className="me-2"
+                                />
+                                {selectedFile && (
+                                    <span className="text-muted">
+                                        {selectedFile.name}
+                                    </span>
+                                )}
+                            </div>
                         </Form.Group>
 
                         <Form.Group className="mb-3">

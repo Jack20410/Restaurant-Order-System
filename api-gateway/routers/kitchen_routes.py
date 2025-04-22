@@ -2,28 +2,44 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 import httpx
 from typing import Dict, Any, List, Optional
 import os
+from fastapi import File, UploadFile, Form
 
 router = APIRouter()
 
 async def forward_request(path: str, method: str = "GET", data: dict = None, 
-                         headers: dict = None, params: dict = None):
+                         headers: dict = None, params: dict = None, files: dict = None):
     """Forward request to kitchen service"""
     kitchen_service_url = os.getenv("KITCHEN_SERVICE_URL", "http://kitchen-service:8003")
     url = f"{kitchen_service_url}{path}"
+    
     async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
-            if method == "GET":
-                response = await client.get(url, headers=headers, params=params)
-            elif method == "POST":
-                response = await client.post(url, json=data, headers=headers)
-            elif method == "PUT":
-                response = await client.put(url, json=data, headers=headers)
-            elif method == "PATCH":
-                response = await client.patch(url, json=data, headers=headers)
-            elif method == "DELETE":
-                response = await client.delete(url, headers=headers)
+            if files:
+                # Handle multipart form data
+                form_data = {}
+                if data:
+                    form_data.update(data)
+                files_dict = {
+                    'file': (files['file'].filename, files['file'].file, files['file'].content_type)
+                }
+                if method == "POST":
+                    response = await client.post(url, data=form_data, files=files_dict, headers=headers)
+                else:
+                    raise HTTPException(status_code=405, detail="Method not allowed for file upload")
             else:
-                raise HTTPException(status_code=405, detail="Method not allowed")
+                # Handle regular requests
+                if method == "GET":
+                    response = await client.get(url, headers=headers, params=params)
+                elif method == "POST":
+                    response = await client.post(url, json=data, headers=headers)
+                elif method == "PUT":
+                    response = await client.put(url, json=data, headers=headers)
+                elif method == "PATCH":
+                    response = await client.patch(url, json=data, headers=headers)
+                elif method == "DELETE":
+                    response = await client.delete(url, headers=headers)
+                else:
+                    raise HTTPException(status_code=405, detail="Method not allowed")
                 
             return response.json(), response.status_code
         except httpx.RequestError as e:
@@ -31,7 +47,6 @@ async def forward_request(path: str, method: str = "GET", data: dict = None,
 
 #<------------------------Menu routes------------------------>
 @router.get("/menu", response_model=List[Dict[str, Any]])
-@router.get("/menu/", response_model=List[Dict[str, Any]])
 async def get_menu():
     """Get full menu route forwarded to kitchen service"""
     response, status_code = await forward_request(
@@ -45,7 +60,6 @@ async def get_menu():
     return response
 
 @router.post("/menu", response_model=Dict[str, str])
-@router.post("/menu/", response_model=Dict[str, str])
 async def add_food_item(food_data: Dict[str, Any], authorization: str = Header(...)):
     """Add new food item route forwarded to kitchen service"""
     headers = {"Authorization": authorization}
@@ -53,6 +67,30 @@ async def add_food_item(food_data: Dict[str, Any], authorization: str = Header(.
         path="/menu/",
         method="POST",
         data=food_data,
+        headers=headers
+    )
+    
+    if status_code >= 400:
+        raise HTTPException(status_code=status_code, detail=response)
+    
+    return response
+
+@router.post("/menu/upload-image")
+async def upload_food_image(
+    file: UploadFile = File(...),
+    category: str = Form(...),
+    authorization: str = Header(...)
+):
+    """Upload food image route forwarded to kitchen service"""
+    headers = {
+        "Authorization": authorization
+    }
+    
+    response, status_code = await forward_request(
+        path="/menu/upload-image",
+        method="POST",
+        data={"category": category},
+        files={"file": file},
         headers=headers
     )
     
