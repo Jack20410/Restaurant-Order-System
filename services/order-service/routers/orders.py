@@ -192,3 +192,12 @@ def update_table_status(table_id: int, status_update: TableStatusUpdate):
         return {"message": "Table status updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/table/{table_id}")
+def get_table_orders(table_id: int):
+    """Get all orders for a specific table"""
+    try:
+        orders = order_service.get_table_orders(table_id)
+        return orders
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

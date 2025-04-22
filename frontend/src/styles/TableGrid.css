@@ -84,3 +84,137 @@
     justify-content: space-between;
     margin: 5px 0;
 }
+
+.modern-modal .modal-content {
+    border-radius: 1rem;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modern-modal .modal-header {
+    padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.modern-modal .modal-header .close {
+    padding: 1.5rem;
+    margin: -1rem -1rem -1rem auto;
+}
+
+.modern-modal .modal-body {
+    padding: 1.5rem;
+}
+
+.modern-modal .modal-footer {
+    padding: 1rem 1.5rem 1.5rem;
+}
+
+.hover-scale {
+    transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+    transform: scale(1.02);
+}
+
+.receipt-card {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.receipt-card .card-header {
+    border-bottom: 1px dashed #dee2e6;
+}
+
+.receipt-card .list-group-item {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.receipt-card .list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* Add smooth transitions */
+.modal.fade .modal-dialog {
+    transition: transform 0.2s ease-out;
+}
+
+/* Style badges */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Style buttons */
+.btn {
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.btn i {
+    font-size: 1.1em;
+    vertical-align: -2px;
+}
+
+/* Add subtle hover effects */
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Style modal backdrop */
+.modal-backdrop.show {
+    opacity: 0.7;
+}
+
+/* Responsive padding for smaller screens */
+@media (max-width: 576px) {
+    .modern-modal .modal-header,
+    .modern-modal .modal-body,
+    .modern-modal .modal-footer {
+        padding: 1rem;
+    }
+
+    .grid-buttons {
+        gap: 0.5rem;
+    }
+
+    .grid-buttons .btn {
+        min-height: 100px;
+        padding: 0.75rem;
+    }
+
+    .grid-buttons .btn i {
+        font-size: 1.25rem !important;
+    }
+}
+
+.grid-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 100%;
+}
+
+.grid-buttons .btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 120px;
+    width: 100%;
+    white-space: normal;
+    padding: 1rem;
+}
+
+.grid-buttons .btn i {
+    margin-bottom: 0.5rem;
+}
+
+.btn-outline-danger {
+    border-width: 2px;
+}

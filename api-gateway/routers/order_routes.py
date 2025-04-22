@@ -237,6 +237,17 @@ async def reserve_table(table_id: int, authorization: str = Header(...)):
     )
     return response
 
+@router.get("/table/{table_id}")
+async def get_table_orders(table_id: int, authorization: str = Header(...)):
+    """Get all orders for a specific table"""
+    headers = {"Authorization": authorization}
+    response, status_code = await forward_request(
+        path=f"/orders/table/{table_id}",
+        method="GET",
+        headers=headers
+    )
+    return response
+
 # <------------------------Payment endpoints------------------------>
 @router.post("/payments")
 async def process_payment(payment_data: Dict[str, Any], authorization: str = Header(...)):

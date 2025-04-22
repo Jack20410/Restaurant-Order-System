@@ -348,3 +348,52 @@ def migrate_to_completed_order(order_id: int, payment_data: dict):
         raise e
     finally:
         session.close()
+
+def get_table_orders(table_id: int):
+    """
+    Get all orders for a specific table, including completed and paid orders
+    """
+    session = get_db_connection()
+    if not session:
+        raise Exception("Database connection failed")
+    
+    try:
+        # Get all orders for the specified table
+        table_orders = session.query(Order).filter(
+            Order.table_id == table_id
+        ).order_by(Order.created_at.desc()).all()
+        
+        # Convert to list of dictionaries with items
+        result = []
+        for order in table_orders:
+            order_dict = {
+                "order_id": order.order_id,
+                "employee_id": order.employee_id,
+                "table_id": order.table_id,
+                "order_status": order.order_status,
+                "total_price": order.total_price,
+                "created_at": order.created_at.isoformat(),
+                "customer_name": order.customer_name,
+                "customer_phone": order.customer_phone
+            }
+            
+            # Get items for this order
+            items = session.query(OrderItem).filter(OrderItem.order_id == order.order_id).all()
+            order_dict['items'] = [{
+                "food_id": item.food_id,
+                "quantity": item.quantity,
+                "note": item.note
+            } for item in items]
+            
+            # Get table information
+            table = session.query(Table).filter(Table.table_id == order.table_id).first()
+            if table:
+                order_dict['table_status'] = table.table_status
+            
+            result.append(order_dict)
+            
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
