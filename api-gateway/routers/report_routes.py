@@ -162,3 +162,103 @@ async def get_employee_summary(authorization: str = Header(...)):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/payments/history")
+async def get_payment_history(authorization: str = Header(...)):
+    """Get all payment history"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization header is required")
+
+        headers = {"Authorization": authorization}
+        path = "/payments/history"
+        
+        response, status_code = await forward_request(
+            path=path,
+            method="GET",
+            headers=headers
+        )
+        
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=response)
+            
+        return response
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/payments/customer/{phone_number}")
+async def get_customer_payment_history(phone_number: str, authorization: str = Header(...)):
+    """Get payment history for a specific customer"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization header is required")
+
+        headers = {"Authorization": authorization}
+        path = f"/payments/customer/{phone_number}"
+        
+        response, status_code = await forward_request(
+            path=path,
+            method="GET",
+            headers=headers
+        )
+        
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=response)
+            
+        return response
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/payments/receipt/{payment_id}")
+async def get_payment_receipt(payment_id: int, authorization: str = Header(...)):
+    """Get receipt for a specific payment"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization header is required")
+
+        headers = {"Authorization": authorization}
+        path = f"/payments/receipt/{payment_id}"
+        
+        response, status_code = await forward_request(
+            path=path,
+            method="GET",
+            headers=headers
+        )
+        
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=response)
+            
+        return response
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/payments/receipts/{phone_number}")
+async def get_customer_receipts(phone_number: str, authorization: str = Header(...)):
+    """Get all receipts for a specific customer"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization header is required")
+
+        headers = {"Authorization": authorization}
+        path = f"/receipt/phone/{phone_number}"
+        
+        response, status_code = await forward_request(
+            path=path,
+            method="GET",
+            headers=headers
+        )
+        
+        if status_code >= 400:
+            raise HTTPException(status_code=status_code, detail=response)
+            
+        return response
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

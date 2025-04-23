@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, ButtonGroup, Button, Table } from 'react-bootstrap';
+import { Container, Row, Col, Card, ButtonGroup, Button, Table, Form, InputGroup, Modal } from 'react-bootstrap';
 import { Line, Pie } from 'react-chartjs-2';
 import axios from 'axios';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../../constants';
-import { FaChartLine, FaUsers, FaShoppingCart, FaUserTie } from 'react-icons/fa';
+import { FaChartLine, FaUsers, FaShoppingCart, FaUserTie, FaHistory, FaSearch, FaSort, FaReceipt } from 'react-icons/fa';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -43,14 +43,24 @@ const fetchMenuItems = async () => {
             }
         });
         if (response.data) {
+            // Keep array for pie chart
             menuItemsCache = response.data;
-            return response.data;
+            
+            // Create map for quick price lookups
+            const menuMap = response.data.reduce((acc, item) => {
+                acc[item.food_id] = item;
+                return acc;
+            }, {});
+            userDataCache.set('menuItemsMap', menuMap);
         }
-        return [];
     } catch (error) {
         console.error('Error fetching menu items:', error);
-        return [];
     }
+};
+
+// Function to get food details by ID
+const getFoodDetails = (foodId) => {
+    return userDataCache.get('menuItemsMap')[foodId] || { name: `Food ${foodId}`, price: 0 };
 };
 
 // Function to get food name by ID
@@ -100,6 +110,18 @@ const Dashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [employeeSummary, setEmployeeSummary] = useState([]);
     const [usersData, setUsersData] = useState([]);
+    const [purchaseHistory, setPurchaseHistory] = useState([]);
+    const [filteredPurchaseHistory, setFilteredPurchaseHistory] = useState([]);
+    const [searchPhone, setSearchPhone] = useState('');
+    const [sortConfig, setSortConfig] = useState({
+        key: 'payment_date',
+        direction: 'desc'
+    });
+    const [showOrderModal, setShowOrderModal] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [orderDetails, setOrderDetails] = useState(null);
+    const [menuItemsCache, setMenuItemsCache] = useState([]);
+    const [menuItemsMap, setMenuItemsMap] = useState({});
 
     // Helper function to format currency in VND
     const formatVND = (amount) => {
@@ -205,6 +227,130 @@ const Dashboard = () => {
         }
     };
 
+    const fetchPurchaseHistory = async (phoneNumber = '') => {
+        try {
+            const token = sessionStorage.getItem(STORAGE_KEYS.TOKEN);
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const endpoint = phoneNumber 
+                ? `${API_ENDPOINTS.REPORTS}/payments/customer/${phoneNumber}`
+                : `${API_ENDPOINTS.REPORTS}/payments/history`;
+
+            const response = await axios.get(endpoint, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            const data = response.data;
+            setPurchaseHistory(data);
+            setFilteredPurchaseHistory(data);
+        } catch (error) {
+            console.error('Error fetching purchase history:', error);
+        }
+    };
+
+    // Handle search
+    const handleSearch = (value) => {
+        setSearchPhone(value);
+        if (value.trim() === '') {
+            setFilteredPurchaseHistory(purchaseHistory);
+        } else {
+            const filtered = purchaseHistory.filter(purchase => 
+                purchase.customer_phone.includes(value.trim())
+            );
+            setFilteredPurchaseHistory(filtered);
+        }
+    };
+
+    // Handle sorting
+    const handleSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+
+        const sortedData = [...filteredPurchaseHistory].sort((a, b) => {
+            if (key === 'payment_date') {
+                return direction === 'asc' 
+                    ? new Date(a[key]) - new Date(b[key])
+                    : new Date(b[key]) - new Date(a[key]);
+            }
+            if (key === 'amount') {
+                return direction === 'asc' 
+                    ? a[key] - b[key]
+                    : b[key] - a[key];
+            }
+            return 0;
+        });
+
+        setFilteredPurchaseHistory(sortedData);
+    };
+
+    // Get sort icon
+    const getSortIcon = (key) => {
+        if (sortConfig.key === key) {
+            return sortConfig.direction === 'asc' ? '↑' : '↓';
+        }
+        return '↕';
+    };
+
+    const handleOrderClick = async (order) => {
+        try {
+            setSelectedOrder(order);
+            setShowOrderModal(true);
+            setOrderDetails(null);
+
+            const token = sessionStorage.getItem(STORAGE_KEYS.TOKEN);
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            // Ensure menu items are loaded first
+            await fetchMenuItems();
+
+            // Fetch order details
+            const response = await axios.get(`/api/orders/${order.order_completed_id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            // Calculate item totals using menu items prices and include customer info from purchase history
+            const orderDetailsWithPrices = {
+                ...response.data,
+                customer_name: order.customer_name,
+                customer_phone: order.customer_phone || order.phone_number, // Try both possible property names
+                payment_date: order.payment_date,
+                payment_id: order.payment_id,
+                amount_paid: order.amount,
+                items: response.data.items.map(item => {
+                    const foodDetails = getFoodDetails(item.food_id);
+                    return {
+                        ...item,
+                        name: foodDetails.name,
+                        price: foodDetails.price,
+                        total: foodDetails.price * item.quantity
+                    };
+                })
+            };
+            
+            setOrderDetails(orderDetailsWithPrices);
+        } catch (error) {
+            console.error('Error fetching order details:', error);
+            setOrderDetails({ error: 'Failed to load order details' });
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowOrderModal(false);
+        setSelectedOrder(null);
+        setOrderDetails(null);
+    };
+
     useEffect(() => {
         const fetchAllData = async () => {
             setIsLoading(true);
@@ -213,7 +359,9 @@ const Dashboard = () => {
                 fetchRevenueData('month'),
                 fetchRevenueData('year'),
                 fetchStatistics(),
-                fetchEmployeeSummary()
+                fetchEmployeeSummary(),
+                fetchPurchaseHistory(),
+                fetchMenuItems() // Add menu items fetch
             ]);
             setIsLoading(false);
         };
@@ -571,6 +719,208 @@ const Dashboard = () => {
                     </Card>
                 </Col>
             </Row>
+            <Row className="mt-4">
+                <Col xs={12}>
+                    <Card className="border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                        <Card.Body className="p-4">
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <Card.Title className="fw-bold" style={{ color: '#2c3e50' }}>
+                                    <FaHistory className="me-2" />
+                                    Purchase History
+                                </Card.Title>
+                                {/* Search and Sort Controls */}
+                                <Row className="mb-8">
+                                    <Col md={6}>
+                                        <InputGroup>
+                                            <InputGroup.Text>
+                                                <FaSearch />
+                                            </InputGroup.Text>
+                                            <Form.Control
+                                                placeholder="Phone number..."
+                                                value={searchPhone}
+                                                onChange={(e) => handleSearch(e.target.value)}
+                                            />
+                                        </InputGroup>
+                                    </Col>
+                                    <Col md={6} className="d-flex justify-content-end">
+                                        <ButtonGroup>
+                                            <Button 
+                                                variant="outline-secondary"
+                                                onClick={() => handleSort('amount')}
+                                            >
+                                                Amount {getSortIcon('amount')}
+                                            </Button>
+                                            <Button 
+                                                variant="outline-secondary"
+                                                onClick={() => handleSort('payment_date')}
+                                            >
+                                                Date {getSortIcon('payment_date')}
+                                            </Button>
+                                        </ButtonGroup>
+                                    </Col>
+                                </Row>
+                            </div>
+
+                            {isLoading ? (
+                                <div className="text-center p-5">
+                                    <div className="spinner-border text-primary" role="status">
+                                        <span className="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="table-responsive" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                                    <Table hover className="align-middle">
+                                        <thead className="bg-light sticky-top">
+                                            <tr>
+                                                <th>Order ID</th>
+                                                <th>Customer Name</th>
+                                                <th>Phone Number</th>
+                                                <th>Amount</th>
+                                                <th>Payment Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredPurchaseHistory && filteredPurchaseHistory.length > 0 ? (
+                                                filteredPurchaseHistory.map((purchase) => (
+                                                    <tr 
+                                                        key={purchase.payment_id}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        <td>#{purchase.order_completed_id}</td>
+                                                        <td>{purchase.customer_name}</td>
+                                                        <td>{purchase.customer_phone}</td>
+                                                        <td>{formatVND(purchase.amount)}</td>
+                                                        <td>
+                                                            {new Date(purchase.payment_date).toLocaleString('vi-VN')}
+                                                        </td>
+                                                        <td>
+                                                            <Button
+                                                                variant="outline-info"
+                                                                size="sm"
+                                                                onClick={() => handleOrderClick(purchase)}
+                                                            >
+                                                                <FaReceipt /> View Details
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="6" className="text-center">
+                                                        No purchase history found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            )}
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* Order Details Modal */}
+            <Modal
+                show={showOrderModal}
+                onHide={handleCloseModal}
+                size="lg"
+                centered
+            >
+                <Modal.Header closeButton className="border-bottom">
+                    <Modal.Title>
+                        <FaReceipt className="me-2" />
+                        Order Details #{selectedOrder?.order_completed_id}
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {!orderDetails ? (
+                        <div className="text-center p-4">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    ) : orderDetails.error ? (
+                        <div className="text-center text-danger">
+                            {orderDetails.error}
+                        </div>
+                    ) : (
+                        <div>
+                            <div className="mb-4">
+                                <h5 className="mb-3 border-bottom pb-2">Customer Information</h5>
+                                <Row>
+                                    <Col md={6}>
+                                        <Table borderless>
+                                            <tbody>
+                                                <tr>
+                                                    <td className="fw-bold text-muted" width="150">Name:</td>
+                                                    <td>{orderDetails.customer_name || 'N/A'}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-bold text-muted">Phone:</td>
+                                                    <td>{orderDetails.customer_phone || 'N/A'}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-bold text-muted">Table:</td>
+                                                    <td>#{orderDetails.table_id}</td>
+                                                </tr>
+                                            </tbody>
+                                        </Table>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Table borderless>
+                                            <tbody>
+                                                <tr>
+                                                    <td className="fw-bold text-muted">Payment Date:</td>
+                                                    <td>{new Date(orderDetails.payment_date).toLocaleString('vi-VN')}</td>
+                                                </tr>
+                                            </tbody>
+                                        </Table>
+                                    </Col>
+                                </Row>
+                            </div>
+
+                            <div className="mb-4">
+                                <h5 className="mb-3 border-bottom pb-2">Order Items</h5>
+                                <Table bordered hover>
+                                    <thead className="bg-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th className="text-center" width="100">Quantity</th>
+                                            <th className="text-end" width="150">Price</th>
+                                            <th className="text-end" width="150">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {orderDetails.items && orderDetails.items.map((item, index) => (
+                                            <tr key={index}>
+                                                <td>{item.name}</td>
+                                                <td className="text-center">{item.quantity}</td>
+                                                <td className="text-end">{formatVND(item.price)}</td>
+                                                <td className="text-end">{formatVND(item.total)}</td>
+                                            </tr>
+                                        ))}
+                                        <tr className="fw-bold">
+                                            <td colSpan="3" className="text-end">Total Amount:</td>
+                                            <td className="text-end">{formatVND(orderDetails.amount_paid)}</td>
+                                        </tr>
+                                    </tbody>
+                                </Table>
+                            </div>
+
+                            <div className="text-end text-muted">
+                                <small>Payment ID: #{orderDetails.payment_id}</small>
+                            </div>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className="border-top">
+                    <Button variant="secondary" onClick={handleCloseModal}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 };
